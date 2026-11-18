@@ -577,7 +577,7 @@
 <script>
 function bookingV4() {
   const q = new URLSearchParams(location.search);
-  const scenario = q.get('from') || 'therapist';   // therapist | store | full
+  const scenario = q.get('from') || (q.get('therapist') ? 'therapist' : 'store');   // therapist | store | full
   const nowMin = (() => { const d = new Date(); const m = d.getHours() * 60 + d.getMinutes(); return m < 11 * 60 || m > 23 * 60 ? 13 * 60 + 5 : m; })();
   const DOW = ['日','月','火','水','木','金','土'];
 

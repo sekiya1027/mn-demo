@@ -87,7 +87,13 @@
       var oa = a.status === "working" ? 0 : 1, ob = b.status === "working" ? 0 : 1;
       return oa - ob || a.start_time.localeCompare(b.start_time);
     });
-    return { store: storeObj(), guide_updated_at: fmt(ref - 12), items: items };
+    // 店舗スコープの予約CTA (cta.py _attach_store_cta / allow_store_booking と同形)。
+    // 指名なしで予約シートを開き、指名はシート内のセラピスト選択に委ねる
+    var cta = {
+      mode: "booking", label: "WEB予約する",
+      url: window.MN_DEMO_FLAT ? "/booking.html" : "/widget/book/" + STORE.puid + "/"
+    };
+    return { store: storeObj(), guide_updated_at: fmt(ref - 12), items: items, cta: cta };
   }
 
   // ── セラピスト個別タイムライン (data-type="timeline" data-therapist=…) ──
