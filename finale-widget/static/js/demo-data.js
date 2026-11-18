@@ -77,7 +77,7 @@
         badge: badge || "before",
         next_available: badge === "next" ? fmt(nextAt) : null,
         next_wait_minutes: badge === "next" ? nextAt - ref : null,
-        is_full: badge === "full", room_name: "",
+        is_full: badge === "full", room_name: t.room || "",  // 多店舗(Finale)は店舗名をルーム名として出す
         catch_copy: badge === "now" ? t.catch || "" : "",
         guide_updated_at: fmt(ref - 12)
       });

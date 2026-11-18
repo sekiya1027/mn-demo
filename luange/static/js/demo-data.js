@@ -77,7 +77,7 @@
         badge: badge || "before",
         next_available: badge === "next" ? fmt(nextAt) : null,
         next_wait_minutes: badge === "next" ? nextAt - ref : null,
-        is_full: badge === "full", room_name: "",
+        is_full: badge === "full", room_name: t.room || "",  // 多店舗(Finale)は店舗名をルーム名として出す
         catch_copy: badge === "now" ? t.catch || "" : "",
         guide_updated_at: fmt(ref - 12)
       });
@@ -118,7 +118,7 @@
     var h = hash(t.puid);
     var posts = [
       {
-        content: (today ? "本日 " + today.start + "〜" + today.end + " で出勤しています🌸\n" : "") + "まだご案内できるお時間がありますので、お気軽にご連絡ください♪\n多治見駅から徒歩5分です🚶‍♂️",
+        content: (today ? "本日 " + today.start + "〜" + today.end + " で出勤しています🌸\n" : "") + "まだご案内できるお時間がありますので、お気軽にご連絡ください♪" + (STORE.access_note ? "\n" + STORE.access_note : ""),
         images: imgs.slice(0, 1), at: new Date(now.getTime() - 35 * 60000), likes: 9 + (h % 12), src: null
       },
       {
@@ -152,7 +152,7 @@
   var COMMENTS = [
     { c: "{name}さんは本当に聞き上手で、気づいたら仕事の愚痴まで話してました。施術も丁寧で肩がすごく軽くなりました。また伺います！", tags: ["聞き上手", "施術が丁寧", "癒やし系"], rec: "初めての方", d: "3日前", a: "常連のKさん", g: false },
     { c: "初めてのメンエスで緊張していましたが、{name}さんの笑顔と会話で一気にリラックスできました。強さの加減も聞いてくれて安心です。", tags: ["笑顔がかわいい", "会話が楽しい", "気づかい上手"], rec: "初めての方", d: "1週間前", a: "匿名", g: true },
-    { c: "多治見でここまで密着感のある施術は貴重。時間もきっちり守ってくれて、終わった後の爽快感がすごい。リピ確定です。", tags: ["密着感", "時間きっちり", "リピ確定"], rec: "しっかり揉まれたい方", d: "2週間前", a: "T.M", g: false },
+    { c: "{area}でここまで密着感のある施術は貴重。時間もきっちり守ってくれて、終わった後の爽快感がすごい。リピ確定です。", tags: ["密着感", "時間きっちり", "リピ確定"], rec: "しっかり揉まれたい方", d: "2週間前", a: "T.M", g: false },
     { c: "写真どおりスタイル抜群で清潔感もあり、お部屋の雰囲気も落ち着いていました。会話のテンポが心地よくて、あっという間の90分でした。", tags: ["スタイル抜群", "清潔感", "会話が楽しい"], rec: "癒やされたい方", d: "3週間前", a: "匿名", g: true },
     { c: "大人の余裕があって包容力がすごいです。{name}さんの施術は眠ってしまうほど気持ちよかった。次は120分でお願いしたい。", tags: ["大人の色気", "癒やし系", "技術がうまい"], rec: "癒やされたい方", d: "1ヶ月前", a: "Y", g: false }
   ];
@@ -163,7 +163,7 @@
     var total = 6 + (h % 9);
     var rot = h % COMMENTS.length;
     var all = COMMENTS.slice(rot).concat(COMMENTS.slice(0, rot)).map(function (x) {
-      return { author: x.a, is_guest: x.g, date_label: x.d, comment: x.c.replace(/\{name\}/g, t.name), tags: x.tags, recommended_for: x.rec };
+      return { author: x.a, is_guest: x.g, date_label: x.d, comment: x.c.replace(/\{name\}/g, t.name).replace(/\{area\}/g, STORE.area), tags: x.tags, recommended_for: x.rec };
     });
     var lim = count === "all" ? all.length : (+count || 3);
     var tally = {};
