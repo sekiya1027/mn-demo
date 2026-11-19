@@ -462,6 +462,8 @@
     ".att-badge.now{color:#fff;box-shadow:0 3px 10px -2px rgba(0,0,0,.5)}",
     /* 今日の案内 (issue #1731。?v=18 以降): 最短ご案内・本日満了・受付終了・ルーム・一言 */
     ".att-card.dim{opacity:.62}",
+    "a.att-card{color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent;cursor:pointer}",
+    "a.att-card:active{transform:scale(.985)}",
     ".att-side{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}",
     ".att-badge.full{background:" + colors.el + ";color:" + colors.mut + "}",
     ".att-next{display:flex;flex-direction:column;align-items:flex-end;line-height:1;padding:5px 9px 5px 10px;border-radius:10px;border:1.5px solid currentColor;background:" + colors.card + "}",
@@ -2835,7 +2837,8 @@
         var badge = it.badge || (working && it.instant ? "now" : working ? "duty" : "before");
         var dim = badge === "ended" || badge === "full";
         var edge = badge === "now" || badge === "next" ? accent : dim ? colors.fnt : working ? "#10b981" : "#f59e0b";
-        body += '<div class="att-card' + (dim ? ' dim' : '') + '" style="' + delay + '">';
+        // [DEMO] it.link (店舗HPのセラピスト詳細) があればカード全体をリンクにする (本番 API には無いデモ専用フィールド)
+        body += '<' + (it.link ? 'a href="' + esc(it.link) + '"' : 'div') + ' class="att-card' + (dim ? ' dim' : '') + '" style="' + delay + '">';
         body += '<span class="att-edge" style="background:' + edge + '"></span>';
         body += '<div class="att-av">';
         if (it.image) body += '<img class="att-img" src="' + esc(safeUrl(it.image)) + '">';
@@ -2867,7 +2870,7 @@
         else if (badge === "now") body += '<span class="att-badge now" style="background:' + accent + '">' + svgBolt + '今すぐ可</span>';
         else if (badge === "duty") body += '<span class="att-badge duty"><span class="dot"></span>出勤中</span>';
         else body += '<span class="att-badge sched code">' + esc(it.start_time) + '〜</span>';
-        body += '</div></div>';
+        body += '</div></' + (it.link ? 'a' : 'div') + '>';
       });
     } else if (type === "staff") {
       body = '<div class="staff-grid">';
