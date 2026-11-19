@@ -54,6 +54,12 @@
     };
   }
   function findT(puid) { for (var i = 0; i < TS.length; i++) if (TS[i].puid === puid) return TS[i]; return null; }
+  function storeCta() {
+    return {
+      mode: "booking", label: "WEB予約する",
+      url: window.MN_DEMO_FLAT ? "/booking.html" : "/widget/book/" + STORE.puid + "/"
+    };
+  }
   function ctaFor(t) {
     return {
       mode: "booking", label: "WEB予約する",
@@ -89,11 +95,23 @@
     });
     // 店舗スコープの予約CTA (cta.py _attach_store_cta / allow_store_booking と同形)。
     // 指名なしで予約シートを開き、指名はシート内のセラピスト選択に委ねる
-    var cta = {
-      mode: "booking", label: "WEB予約する",
-      url: window.MN_DEMO_FLAT ? "/booking.html" : "/widget/book/" + STORE.puid + "/"
+    return { store: storeObj(), guide_updated_at: fmt(ref - 12), items: items, cta: storeCta() };
+  }
+
+  // ── 大バナー (data-type="featured") — views.py _build_featured_data と同形 (issue #1166) ──
+  // 本番は管理画面で選んだ3人 (中央→左→右)。デモは STORE.featured の puid 順、無ければ名簿先頭3人
+  function featured() {
+    var picks = (STORE.featured || []).map(findT).filter(Boolean);
+    for (var i = 0; i < TS.length && picks.length < 3; i++) if (picks.indexOf(TS[i]) < 0) picks.push(TS[i]);
+    var roles = ["main", "left", "right"];
+    var items = picks.slice(0, 3).map(function (t, i) {
+      return { role: roles[i], name: t.name, image: t.image, age: t.age, height: t.height || null, cup: t.cup || "", is_vip: i === 0 };
+    });
+    return {
+      store: storeObj(), items: items,
+      featured: { url: "https://men-esthe.co.jp/", show_cup: true },
+      cta: storeCta()
     };
-    return { store: storeObj(), guide_updated_at: fmt(ref - 12), items: items, cta: cta };
   }
 
   // ── セラピスト個別タイムライン (data-type="timeline" data-therapist=…) ──
@@ -221,6 +239,7 @@
     if (/\/widget\/api\/shop\//.test(u)) {
       if (q.type === "attendance") return ok(attendance(ref));
       if (q.type === "timeline") return ok(timeline(q.therapist, +q.offset || 0, ref));
+      if (q.type === "featured") return ok(featured());
     }
     return window.fetch(url, opts);
   };
