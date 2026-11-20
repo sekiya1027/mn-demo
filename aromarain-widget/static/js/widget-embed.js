@@ -824,6 +824,68 @@
   // カラーは node/src/input.css の @theme 実トークン (primary #f53d7b 系 / bg-deep / bg-card) と
   // :root[data-theme="light"] の実値。他 type の DOM を重くしないよう oshikome のときだけ足す
   if (type === "oshikome") style.textContent += "\n" + oshikomeCss();
+  // ── [DEMO] フォロー / お気に入り店舗 ──
+  // 本番案: タップで men-esthe.co.jp を別窓で開き (自ドメインなので会員 Cookie が効く)、
+  // 登録後に postMessage で「フォロー中」を返す。デモは同一オリジンなので localStorage を共有して擬似る
+  style.textContent += "\n" + [
+    ".mn-fl{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border-radius:999px;border:1.5px solid " + accent + ";background:transparent;color:" + accent + ";font:800 11px/1 inherit;font-family:inherit;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s,transform .1s}",
+    ".mn-fl svg{width:13px;height:13px;flex-shrink:0}",
+    ".mn-fl.on{background:" + accent + ";color:#fff}",
+    ".mn-fl.on svg{fill:#fff}",
+    ".mn-fl:active{transform:scale(.96)}",
+    ".mn-fl.mini{height:24px;padding:0 8px;font-size:10px;gap:4px}",
+    ".mn-fl.mini svg{width:11px;height:11px}",
+    ".mn-fl.st{margin-left:auto;height:26px;font-size:10.5px}",
+    ".thdr .mn-fl{margin-left:auto;flex-shrink:0}",
+    ".hdr .mn-fl.st{position:absolute;right:12px;top:50%;transform:translateY(-50%)}",
+    ".hdr{position:relative}",
+    ".att-side .mn-fl{margin-top:2px}"
+  ].join("\n");
+  var svgHeart = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
+  var FL_KEY = "mn-demo-follows";
+  function flList() { try { return JSON.parse(localStorage.getItem(FL_KEY) || "[]"); } catch (e) { return []; } }
+  function flSave(list) { try { localStorage.setItem(FL_KEY, JSON.stringify(list)); } catch (e) {} }
+  function flHas(kind, id) { return flList().some(function (x) { return x.kind === kind && x.id === id; }); }
+  function flLabel(kind, on) { return kind === "store" ? (on ? "お気に入り店舗" : "お気に入り") : (on ? "フォロー中" : "フォロー"); }
+  function flBtn(kind, id, name, image, cls, extra) {
+    if (!id) return "";
+    var on = flHas(kind, id);
+    return '<button type="button" class="mn-fl ' + (cls || "") + (on ? " on" : "") + '" data-fl-kind="' + kind + '" data-fl-id="' + esc(id) + '"'
+         + ' data-fl-name="' + esc(name || "") + '" data-fl-img="' + esc(image || "") + '" data-fl-extra="' + esc(extra || "") + '" aria-pressed="' + (on ? "true" : "false") + '">'
+         + svgHeart + '<span>' + flLabel(kind, on) + '</span></button>';
+  }
+  function flRefresh() {
+    shadow.querySelectorAll(".mn-fl").forEach(function (b) {
+      var on = flHas(b.getAttribute("data-fl-kind"), b.getAttribute("data-fl-id"));
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.querySelector("span").textContent = flLabel(b.getAttribute("data-fl-kind"), on);
+    });
+  }
+  function bindFollow(scope) {
+    scope.querySelectorAll(".mn-fl").forEach(function (b) {
+      if (b.dataset.bound === "1") return;
+      b.dataset.bound = "1";
+      b.addEventListener("click", function (e) {
+        e.preventDefault(); e.stopPropagation();
+        var kind = b.getAttribute("data-fl-kind"), id = b.getAttribute("data-fl-id");
+        if (flHas(kind, id)) {
+          // 解除はその場で (本番も別窓なしで良い: 解除 API は失っても困らない)
+          flSave(flList().filter(function (x) { return !(x.kind === kind && x.id === id); }));
+          flRefresh();
+          return;
+        }
+        var s = (window.MN_DEMO_STORE || {});
+        var q = "kind=" + encodeURIComponent(kind) + "&id=" + encodeURIComponent(id)
+              + "&name=" + encodeURIComponent(b.getAttribute("data-fl-name") || "")
+              + "&img=" + encodeURIComponent(b.getAttribute("data-fl-img") || "")
+              + "&extra=" + encodeURIComponent(b.getAttribute("data-fl-extra") || "")
+              + "&store=" + encodeURIComponent(s.name || "") + "&area=" + encodeURIComponent(s.area || "")
+              + "&back=" + encodeURIComponent(location.href.replace(/[?#].*$/, ""));
+        openOverlay(base + "/mn/follow.html?" + q, "メンエスなうでフォロー", "メンエスなうでフォローする");
+      });
+    });
+  }
 
   function oshikomeCss() {
     // CSS 変数で両テーマを吸収する (テーマは埋め込み単位で固定なので有効側だけ出す)
@@ -1757,7 +1819,8 @@
     if (sub) html += '<div class="thdr-sub">' + sub + '</div>';
     html += '</div>';
     // バッジはスタッフ一覧と同じ判定・同じ見た目を使う (表示の乖離を作らない)
-    return html + staffBadge(t) + '</div>';
+    // [DEMO] 名前横にフォロー CTA
+    return html + staffBadge(t) + flBtn("therapist", therapistPuid, t.name, t.image, "", (t.start_time && t.end_time) ? "本日 " + t.start_time + "〜" + t.end_time : "") + '</div>';
   }
 
   // 週間スケジュール (1日1行)。schedule 型と投稿0件のプロフィール (issue #1641) で共用
@@ -1962,6 +2025,8 @@
     var d = e.data;
     if (!d) return;
     if (d.type === "mn-booking" && d.event === "close") closeOverlay();
+    // [DEMO] フォロー画面からの完了/閉じる通知
+    if (d.type === "mn-follow") { flRefresh(); closeOverlay(); }
     // 投稿フォーム単体モード (okCompose) の閉じる操作
     if (d.type === "mn-widget" && d.event === "compose-close") closeOverlay();
     if (d.type === "mn-widget" && d.event === "compose-ready" && overlayReady) overlayReady();
@@ -2735,6 +2800,8 @@
       var upd = '<span class="hdr-upd"><i></i>案内状況 <span class="code">' + esc(data.guide_updated_at) + '</span> 更新</span>';
       hdr = hdr ? hdr.replace(/<\/div>$/, upd + '</div>') : '<div class="hdr" style="min-height:20px">' + upd + '</div>';
     }
+    // [DEMO] 出勤ウィジェットのヘッダ右端に「お気に入り店舗」
+    if (type === "attendance" && hdr) hdr = hdr.replace(/<\/div>$/, flBtn("store", storePuid, s.name, s.logo || "", "st", s.area || "") + '</div>');
     // 誰のタイムラインか分からないまま投稿が流れる状態を解消する (issue #794)
     if (type === "timeline" && data.therapist) hdr += renderTherapistHeader(data.therapist);
 
@@ -2870,6 +2937,8 @@
         else if (badge === "now") body += '<span class="att-badge now" style="background:' + accent + '">' + svgBolt + '今すぐ可</span>';
         else if (badge === "duty") body += '<span class="att-badge duty"><span class="dot"></span>出勤中</span>';
         else body += '<span class="att-badge sched code">' + esc(it.start_time) + '〜</span>';
+        // [DEMO] カード内フォロー (it.puid はデモ専用フィールド)
+        body += flBtn("therapist", it.puid || "", it.name, it.image, "mini", esc(it.start_time) + "〜" + esc(it.end_time));
         body += '</div></' + (it.link ? 'a' : 'div') + '>';
       });
     } else if (type === "staff") {
@@ -2930,6 +2999,7 @@
     bodyEl = shadow.querySelector(".body");
     if (fill && type === "timeline" && data.therapist && bodyEl.firstElementChild && bodyEl.firstElementChild.className === "empty") root.classList.add("fill-empty");
     bindCta(root);
+    bindFollow(root);  // [DEMO]
     setupTouchLock();
     if (type === "oshikome") initOshikome(data);
     if (type === "featured") {

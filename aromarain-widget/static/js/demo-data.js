@@ -86,6 +86,7 @@
         is_full: badge === "full", room_name: t.room || "",  // 多店舗(Finale)は店舗名をルーム名として出す
         catch_copy: badge === "now" ? t.catch || "" : "",
         link: t.link || null,  // [DEMO] 店舗HPのセラピスト詳細へ (build.py が付ける)
+        puid: t.puid,  // [DEMO] フォロー CTA 用
         guide_updated_at: fmt(ref - 12)
       });
     });
