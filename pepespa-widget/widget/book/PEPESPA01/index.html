@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="ja" class="h-full" data-theme="light" data-theme-locked>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>WEB予約 - PePe SPA 蒲田</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ===== v3 追加分（本番 style.css の上に重ねる。既存クラスは本番テンプレのまま） ===== */
+  :root { --v3-teal: #0d9488; --v3-teal-deep: #0f766e; }
+  html, body { background: var(--color-bg-deep); }
+  [x-cloak] { display: none !important; }
+  .v3-wrap { max-width: 430px; margin: 0 auto; min-height: 100dvh; position: relative; }
+
+  /* 進捗: ヘッダー直下の3分割バー */
+  .v3-prog { display: flex; gap: 4px; padding: 0 14px 8px; }
+  .v3-prog i { flex: 1; height: 3px; border-radius: 9999px; background: color-mix(in oklab, var(--color-surface-200) 12%, transparent); }
+  .v3-prog i.on { background: var(--color-primary-500); }
+  .v3-prog i.done { background: color-mix(in oklab, var(--color-primary-500) 45%, transparent); }
+
+  /* クイックピック（最短・今夜・明日） */
+  .v3-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .v3-qbtn { position: relative; text-align: left; padding: 12px 12px 10px; border-radius: 16px; border: 1px solid color-mix(in oklab, var(--color-surface-700) 18%, transparent); background: var(--color-bg-card); cursor: pointer; }
+  .v3-qbtn.hero { grid-column: 1 / -1; border-color: color-mix(in oklab, var(--color-primary-500) 35%, transparent); background: color-mix(in oklab, var(--color-primary-500) 7%, var(--color-bg-card)); }
+  .v3-qbtn .k { font-size: 11px; font-weight: 800; color: var(--color-primary-400); letter-spacing: .02em; }
+  .v3-qbtn .v { display: block; margin-top: 2px; font-size: 17px; font-weight: 900; color: var(--color-surface-100); letter-spacing: -.01em; }
+  .v3-qbtn .s { display: block; margin-top: 2px; font-size: 11px; color: color-mix(in oklab, var(--color-surface-200) 55%, transparent); }
+  .v3-qbtn.hero .v { font-size: 22px; }
+  .v3-qbtn[disabled] { opacity: .45; cursor: default; }
+
+  /* 日付ストリップ（空き数つき） */
+  .v3-days { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 6px; margin: 0 -2px; }
+  .v3-days::-webkit-scrollbar { display: none; }
+  .v3-day { flex: 0 0 auto; min-width: 54px; padding: 8px 6px 7px; border-radius: 14px; border: 1px solid color-mix(in oklab, var(--color-surface-700) 18%, transparent); background: var(--color-bg-card); text-align: center; cursor: pointer; }
+  .v3-day .dow { font-size: 11px; font-weight: 800; color: color-mix(in oklab, var(--color-surface-200) 60%, transparent); }
+  .v3-day .dow.sat { color: var(--color-cal-sat); } .v3-day .dow.sun { color: var(--color-cal-sun); }
+  .v3-day .md { font-size: 13px; font-weight: 900; color: var(--color-surface-100); margin-top: 1px; }
+  .v3-day .cnt { display: inline-block; margin-top: 4px; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 9999px; background: color-mix(in oklab, #10b981 14%, transparent); color: #047857; }
+  .v3-day .cnt.few { background: color-mix(in oklab, #f59e0b 16%, transparent); color: #b45309; }
+  .v3-day .cnt.none { background: color-mix(in oklab, var(--color-surface-700) 10%, transparent); color: color-mix(in oklab, var(--color-surface-200) 45%, transparent); }
+  .v3-day.sel { border-color: var(--color-primary-500); box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary-500) 25%, transparent); }
+  .v3-day.off { opacity: .55; }
+
+  /* 時間チップ（30分きざみ・帯ごと） */
+  .v3-band { margin-top: 10px; }
+  .v3-band h4 { font-size: 11px; font-weight: 800; color: color-mix(in oklab, var(--color-surface-200) 55%, transparent); margin: 0 0 6px; display: flex; align-items: center; gap: 6px; }
+  .v3-times { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .v3-times.fine { grid-template-columns: repeat(5, 1fr); }
+  .v3-t { padding: 10px 0; border-radius: 12px; border: 1px solid color-mix(in oklab, var(--color-surface-700) 18%, transparent); background: var(--color-bg-card); font-size: 14px; font-weight: 800; color: var(--color-surface-100); text-align: center; cursor: pointer; font-variant-numeric: tabular-nums; }
+  .v3-times.fine .v3-t { font-size: 12px; padding: 8px 0; }
+  .v3-t.few::after { content: "残少"; display: block; font-size: 9px; color: #b45309; font-weight: 800; margin-top: 1px; }
+  .v3-t.ng { color: color-mix(in oklab, var(--color-surface-200) 35%, transparent); background: transparent; border-style: dashed; cursor: default; text-decoration: line-through; }
+  .v3-t.sel { background: var(--color-primary-500); color: #fff; border-color: var(--color-primary-500); }
+  .v3-link { font-size: 12px; font-weight: 700; color: var(--color-primary-400); text-decoration: underline; text-underline-offset: 3px; background: none; border: 0; padding: 0; cursor: pointer; }
+
+  /* 満枠のときの代替カード */
+  .v3-alt { border-radius: 16px; border: 1px solid color-mix(in oklab, #f59e0b 40%, transparent); background: color-mix(in oklab, #f59e0b 8%, var(--color-bg-card)); padding: 12px; }
+  .v3-alt .ttl { font-size: 13px; font-weight: 900; color: #92400e; }
+  .v3-altrow { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 10px; border-radius: 12px; background: var(--color-bg-card); border: 1px solid color-mix(in oklab, var(--color-surface-700) 15%, transparent); cursor: pointer; width: 100%; text-align: left; }
+  .v3-altrow img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; background: #eee; }
+  .v3-altrow .n { font-size: 13px; font-weight: 800; color: var(--color-surface-100); }
+  .v3-altrow .d { font-size: 11px; color: color-mix(in oklab, var(--color-surface-200) 55%, transparent); }
+  .v3-altrow .go { margin-left: auto; font-size: 12px; font-weight: 800; color: var(--color-primary-400); white-space: nowrap; }
+
+  /* セラピストカードの空きバッジ（店舗起点フロー用） */
+  .v3-tgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .v3-tcard { border-radius: 14px; overflow: hidden; border: 1px solid color-mix(in oklab, var(--color-surface-700) 15%, transparent); background: var(--color-bg-card); cursor: pointer; text-align: left; padding: 0; }
+  .v3-tcard .ph { aspect-ratio: 3/4; background: linear-gradient(160deg, #f6d5e3, #e9c7d6); position: relative; }
+  .v3-tcard .ph .heart { position: absolute; inset: 0; display: grid; place-items: center; font-size: 40px; color: #f9a8c9; }
+  .v3-tcard .badge { position: absolute; left: 6px; top: 6px; font-size: 10px; font-weight: 900; padding: 2px 7px; border-radius: 9999px; background: #10b981; color: #fff; }
+  .v3-tcard .badge.later { background: #f59e0b; }
+  .v3-tcard .badge.full { background: #64748b; }
+  .v3-tcard .nm { padding: 6px 8px 8px; font-size: 12px; font-weight: 800; color: var(--color-surface-100); }
+  .v3-tcard .nm small { display: block; font-weight: 600; font-size: 10px; color: color-mix(in oklab, var(--color-surface-200) 55%, transparent); }
+
+  /* コース（インライン） */
+  .v3-course { width: 100%; text-align: left; border-radius: 16px; border: 1px solid color-mix(in oklab, var(--color-surface-700) 18%, transparent); background: var(--color-bg-card); padding: 12px 12px 10px; cursor: pointer; }
+  .v3-course + .v3-course { margin-top: 8px; }
+  .v3-course .nm { font-size: 14px; font-weight: 900; color: var(--color-surface-100); display: flex; align-items: center; gap: 6px; }
+  .v3-course .pop { font-size: 10px; font-weight: 900; color: #fff; background: var(--color-primary-500); padding: 1px 6px; border-radius: 9999px; }
+  .v3-course .desc { margin-top: 3px; font-size: 11px; line-height: 1.5; color: color-mix(in oklab, var(--color-surface-200) 55%, transparent); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .v3-course .desc.open { display: block; }
+  .v3-durs { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+  .v3-dur { padding: 7px 12px; border-radius: 9999px; border: 1px solid color-mix(in oklab, var(--color-surface-700) 25%, transparent); font-size: 13px; font-weight: 800; color: var(--color-surface-100); background: var(--color-bg-elevated); cursor: pointer; }
+  .v3-dur b { font-weight: 900; }
+  .v3-dur.sel { background: var(--color-primary-500); color: #fff; border-color: var(--color-primary-500); }
+
+  /* オプション（インライン） */
+  .v3-opt { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid color-mix(in oklab, var(--color-surface-700) 18%, transparent); background: var(--color-bg-card); cursor: pointer; }
+  .v3-opt + .v3-opt { margin-top: 6px; }
+  .v3-opt .cb { width: 20px; height: 20px; border-radius: 6px; border: 2px solid color-mix(in oklab, var(--color-surface-700) 40%, transparent); flex: none; display: grid; place-items: center; color: #fff; font-size: 12px; }
+  .v3-opt.sel .cb { background: var(--color-primary-500); border-color: var(--color-primary-500); }
+  .v3-opt .nm { font-size: 13px; font-weight: 800; color: var(--color-surface-100); }
+  .v3-opt .pr { margin-left: auto; font-size: 13px; font-weight: 900; color: var(--color-surface-100); font-variant-numeric: tabular-nums; }
+
+  /* 連絡先カード */
+  .v3-field { margin-top: 10px; }
+  .v3-field label { display: flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 800; color: color-mix(in oklab, var(--color-surface-200) 75%, transparent); margin-bottom: 5px; }
+  .v3-field label small { font-weight: 600; font-size: 11px; color: color-mix(in oklab, var(--color-surface-200) 50%, transparent); }
+  .v3-field .opt { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: color-mix(in oklab, var(--color-surface-200) 10%, transparent); color: color-mix(in oklab, var(--color-surface-200) 60%, transparent); }
+  .v3-in { width: 100%; border-radius: 14px; border: 1.5px solid color-mix(in oklab, var(--color-surface-700) 45%, transparent); background: var(--color-bg-elevated); padding: 13px 14px; font-size: 17px; color: var(--color-surface-100); outline: none; }
+  .v3-in:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary-500) 18%, transparent); }
+  .v3-in.ok { border-color: #10b981; }
+  .v3-in.tel { font-size: 22px; font-weight: 800; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+  .v3-hint { margin-top: 5px; font-size: 11px; color: color-mix(in oklab, var(--color-surface-200) 55%, transparent); display: flex; align-items: center; gap: 5px; }
+  .v3-hint.ok { color: #047857; font-weight: 700; }
+  .v3-hint.err { color: var(--color-primary-400); font-weight: 700; }
+
+  /* 固定フッター CTA */
+  .v3-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; pointer-events: none; }
+  .v3-cta > div { max-width: 430px; margin: 0 auto; pointer-events: auto; background: color-mix(in oklab, var(--color-bg-deep) 92%, transparent); backdrop-filter: blur(8px); border-top: 1px solid color-mix(in oklab, var(--color-surface-700) 15%, transparent); padding: 8px 14px calc(10px + env(safe-area-inset-bottom)); }
+  .v3-cta .row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: color-mix(in oklab, var(--color-surface-200) 65%, transparent); margin-bottom: 6px; }
+  .v3-cta .row b { font-size: 16px; font-weight: 900; color: var(--color-surface-100); }
+  .v3-cta .row .miss { color: var(--color-primary-400); font-weight: 800; }
+  .v3-cta button.main { width: 100%; border-radius: 9999px; padding: 15px 0; font-size: 17px; font-weight: 900; color: #fff; background: var(--v3-teal); border: 0; cursor: pointer; }
+  .v3-cta button.main:disabled { background: color-mix(in oklab, var(--v3-teal) 45%, #fff); box-shadow: none; }
+  .v3-cta .sub { margin-top: 6px; text-align: center; font-size: 10.5px; color: color-mix(in oklab, var(--color-surface-200) 45%, transparent); }
+
+  /* サマリー（送信前） */
+  .v3-sum { border-radius: 16px; border: 1px solid color-mix(in oklab, var(--color-primary-500) 25%, transparent); background: color-mix(in oklab, var(--color-primary-500) 6%, var(--color-bg-card)); padding: 12px 14px; }
+  .v3-sum dl { margin: 0; display: grid; grid-template-columns: 68px 1fr auto; row-gap: 6px; column-gap: 10px; font-size: 13px; align-items: baseline; }
+  .v3-sum dt { color: color-mix(in oklab, var(--color-surface-200) 50%, transparent); }
+  .v3-sum dd { margin: 0; color: var(--color-surface-100); font-weight: 700; }
+  .v3-sum .ed { font-size: 11px; color: color-mix(in oklab, var(--color-surface-200) 55%, transparent); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+  /* 比較トグル（デモ用） */
+  .v3-demo { position: fixed; top: 8px; right: 8px; z-index: 60; display: flex; gap: 4px; }
+  .v3-demo a { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 9999px; background: #0f172a; color: #fff; text-decoration: none; opacity: .75; }
+  .v3-demo a.on { background: var(--color-primary-500); opacity: 1; }
+  @media (max-width: 430px) { .v3-demo { display: none; } }
+
+  .v3-reply { display: flex; justify-content: flex-end; align-items: flex-end; gap: 6px; margin-top: 10px; }
+  .v3-reply .read { font-size: 10px; color: color-mix(in oklab, var(--color-surface-200) 45%, transparent); }
+  .v3-reply .bub { background: var(--color-primary-500); color: #fff; border-radius: 18px 18px 4px 18px; padding: 10px 14px; font-size: 14px; font-weight: 700; max-width: 85%; }
+  .v3-done { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: var(--color-bg-card); border: 1px solid color-mix(in oklab, var(--color-surface-700) 15%, transparent); box-shadow: 0 3px 0 color-mix(in oklab, var(--color-surface-700) 30%, transparent); }
+  .v3-done .l { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--color-surface-100); }
+  .v3-done .l i { width: 20px; height: 20px; border-radius: 9999px; background: var(--color-primary-500); color: #fff; display: grid; place-items: center; font-size: 11px; font-style: normal; }
+  .v3-done button { font-size: 12px; font-weight: 700; color: color-mix(in oklab, var(--color-surface-200) 55%, transparent); background: none; border: 0; cursor: pointer; white-space: nowrap; flex: none; }
+
+  /* ===== v4: 時間帯リクエスト ===== */
+  .v4-win { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .v4-w { text-align: left; padding: 12px 12px 10px; border-radius: 16px; border: 1px solid color-mix(in oklab, var(--color-surface-700) 18%, transparent); background: var(--color-bg-card); cursor: pointer; box-shadow: 0 3px 0 color-mix(in oklab, var(--color-surface-700) 30%, transparent); }
+  .v4-w:active { transform: translateY(3px); box-shadow: none; }
+  .v4-w .l { display: block; font-size: 18px; font-weight: 900; color: var(--color-surface-100); letter-spacing: -.01em; }
+  .v4-w .s { display: block; margin-top: 3px; font-size: 11px; font-weight: 700; color: #047857; }
+  .v4-w .s.off { color: color-mix(in oklab, var(--color-surface-200) 45%, transparent); font-weight: 600; }
+  .v4-w[disabled] { opacity: .5; cursor: default; box-shadow: none; }
+  .v4-w.now { border-color: color-mix(in oklab, var(--color-primary-500) 35%, transparent); background: color-mix(in oklab, var(--color-primary-500) 7%, var(--color-bg-card)); }
+  .v4-w.now .l::before { content: "⚡ "; }
+  .v4-w.sel { border-color: var(--color-primary-500); box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary-500) 25%, transparent); }
+  .v4-sub { margin-top: 10px; border-radius: 14px; border: 1px dashed color-mix(in oklab, var(--color-primary-500) 35%, transparent); background: color-mix(in oklab, var(--color-primary-500) 4%, var(--color-bg-card)); padding: 10px 12px; }
+  .v4-sub .q { font-size: 13px; font-weight: 800; color: var(--color-surface-100); margin-bottom: 8px; }
+  .v4-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .v4-chip { padding: 9px 13px; border-radius: 9999px; border: 1px solid color-mix(in oklab, var(--color-surface-700) 25%, transparent); background: var(--color-bg-elevated); font-size: 13px; font-weight: 800; color: var(--color-surface-100); cursor: pointer; }
+  .v4-chip[disabled] { opacity: .4; cursor: default; }
+  .v4-chip.sel { background: var(--color-primary-500); color: #fff; border-color: var(--color-primary-500); }
+  .v4-note { margin-top: 8px; font-size: 11px; line-height: 1.5; color: color-mix(in oklab, var(--color-surface-200) 55%, transparent); }
+
+  /* 送信確認シート */
+  .v4-sheet { position: fixed; inset: 0; z-index: 70; display: flex; align-items: flex-end; justify-content: center; background: rgba(15,23,42,.55); backdrop-filter: blur(4px); }
+  .v4-sheet > div { width: 100%; max-width: 430px; background: var(--color-bg-card); border-radius: 24px 24px 0 0; padding: 18px 16px calc(16px + env(safe-area-inset-bottom)); }
+  .v4-sheet h3 { margin: 0 0 10px; font-size: 16px; font-weight: 900; color: var(--color-surface-100); }
+  .v4-sheet .btn { width: 100%; border-radius: 9999px; padding: 14px 0; font-size: 16px; font-weight: 900; border: 0; cursor: pointer; }
+  .v4-sheet .btn.go { background: var(--v3-teal); color: #fff; margin-top: 12px; }
+  .v4-sheet .btn.back { background: transparent; color: color-mix(in oklab, var(--color-surface-200) 60%, transparent); font-size: 13px; padding: 10px 0; margin-top: 2px; }
+
+  /* SMS 吹き出し（完了後の流れ） */
+  .v4-sms { margin-top: 8px; display: flex; gap: 8px; align-items: flex-start; }
+  .v4-sms .ic { width: 28px; height: 28px; border-radius: 8px; background: #22c55e; color: #fff; display: grid; place-items: center; font-size: 13px; flex: none; font-weight: 900; }
+  .v4-sms .bx { background: #e9eef5; color: #0f172a; border-radius: 4px 16px 16px 16px; padding: 9px 12px; font-size: 12.5px; line-height: 1.55; white-space: pre-line; max-width: 92%; }
+  .v4-sms .bx.ok { background: #dcfce7; }
+  .v4-sms .bx.wait { background: #fef3c7; }
+  .v4-t { font-size: 10px; color: color-mix(in oklab, var(--color-surface-200) 45%, transparent); margin: 4px 0 0 36px; }
+
+  /* 店舗側の返答画面（オーバーレイ） */
+  .v4-store { position: fixed; inset: 0; z-index: 80; background: #f5f7fa; overflow-y: auto; }
+  .v4-store > div { max-width: 430px; margin: 0 auto; min-height: 100%; }
+  .v4-store header { position: sticky; top: 0; background: #0f172a; color: #fff; padding: 12px 14px; font-weight: 900; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .v4-store header small { font-weight: 600; opacity: .7; display: block; font-size: 11px; }
+  .v4-store header button { background: rgba(255,255,255,.15); color: #fff; border: 0; border-radius: 9999px; padding: 6px 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+  .v4-req { margin: 14px; border-radius: 16px; background: #fff; border: 1px solid #e2e8f0; padding: 14px; }
+  .v4-req .tag { display: inline-block; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 9999px; background: #fee2e2; color: #b91c1c; margin-bottom: 8px; }
+  .v4-req dl { margin: 0; display: grid; grid-template-columns: 64px 1fr; gap: 6px 10px; font-size: 13px; }
+  .v4-req dt { color: #64748b; } .v4-req dd { margin: 0; color: #0f172a; font-weight: 700; }
+  .v4-req .big { font-size: 18px; font-weight: 900; color: #0f172a; }
+  .v4-req h4 { margin: 14px 0 8px; font-size: 13px; font-weight: 900; color: #0f172a; }
+  .v4-tc { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .v4-tc button { padding: 12px 0; border-radius: 12px; border: 1px solid #cbd5e1; background: #fff; font-size: 16px; font-weight: 900; color: #0f172a; cursor: pointer; font-variant-numeric: tabular-nums; }
+  .v4-tc button.sel { background: #0f766e; color: #fff; border-color: #0f766e; }
+  .v4-req .act { margin-top: 12px; width: 100%; border-radius: 9999px; padding: 14px 0; font-size: 15px; font-weight: 900; border: 0; cursor: pointer; background: #0f766e; color: #fff; }
+  .v4-req .act[disabled] { background: #94a3b8; }
+  .v4-req .act.ng { background: transparent; color: #64748b; font-size: 13px; padding: 10px 0; }
+  .v4-req .prev { margin-top: 10px; background: #f1f5f9; border-radius: 10px; padding: 8px 10px; font-size: 11.5px; line-height: 1.5; color: #334155; white-space: pre-line; }
+</style>
+</head>
+<body class="h-full">
+<div x-data="bookingV4()" x-cloak class="chat-atmosphere v3-wrap sm:border-x border-surface-700/15">
+<div class="v3-demo">
+  <a :class="{on: scenario==='therapist'}" href="?from=therapist">指名あり(既定)</a>
+  <a href="?from=therapist&amp;view=store">店舗側画面</a>
+  <a :class="{on: scenario==='store'}" href="?from=store">店舗起点</a>
+  <a :class="{on: scenario==='full'}" href="?from=full">満枠セラピ</a>
+</div>
+  <!-- ===== ヘッダー ===== -->
+  <header class="app-header sticky top-0 z-50 border-b border-surface-700/15 bg-bg-deep/95 backdrop-blur-sm">
+    <div class="flex items-center gap-2.5 px-3 py-2.5">
+      <button type="button" aria-label="前のページへ戻る" class="flex size-9 flex-none items-center justify-center rounded-full text-surface-200/60 cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
+      </button>
+      <div class="flex size-9 flex-none items-center justify-center overflow-hidden rounded-full border border-surface-700/15 bg-bg-card"><span class="text-[12px] font-black text-surface-200/40">m</span></div>
+      <div class="min-w-0 flex-1">
+        <div class="truncate text-[15px] font-extrabold italic text-surface-100">PePe SPA 蒲田</div>
+        <div class="flex items-center gap-1.5 text-[11px] text-surface-200/50">
+          <span class="relative flex h-1.5 w-1.5 flex-none"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"></span><span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400"></span></span>
+          WEB予約・24h受付・登録不要
+        </div>
+      </div>
+      <span x-show="!done" class="flex-none rounded-full bg-bg-elevated px-2.5 py-1 text-[11px] font-bold text-surface-200/60">
+        <span x-text="stepLabel"></span>
+      </span>
+    </div>
+    <div class="v3-prog" x-show="!done">
+      <i :class="progClass(0)"></i><i :class="progClass(1)"></i><i :class="progClass(2)"></i>
+    </div>
+  </header>
+
+  <main class="px-3.5 pt-4" :class="ctaVisible ? 'pb-[160px]' : 'pb-16'">
+    <!-- 信頼要素（1行に圧縮） -->
+    <div class="mx-auto mb-4 flex max-w-[360px] flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-surface-200/60">
+      <span>✓ 入力は約1分</span><span>✓ 時刻は店舗が決めてSMS</span><span>✓ 事前決済なし</span><span>✓ 会員登録不要</span>
+    </div>
+
+    <!-- あいさつ -->
+    <div class="flex items-start gap-2">
+      <img src="icon-wp.svg" alt="" width="32" height="32" class="h-8 w-8 flex-none rounded-full border border-surface-700/15 object-cover">
+      <div class="chat-pop-l min-w-0 max-w-[85%]">
+        <div class="mb-1 ml-1 text-[11px] text-surface-200/45">予約コンシェルジュ</div>
+        <div class="chat-bubble-box w-fit rounded-[18px] rounded-tl-md border border-surface-700/10 bg-bg-card px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.05)]">
+          <p class="chat-bubble-text break-words text-[15px] leading-relaxed text-surface-100" x-text="greeting"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== セラピスト ===== -->
+    <section x-show="revealed.includes('therapist')" class="mt-5">
+      <template x-if="scenario !== 'store'">
+        <div>
+          <div class="v3-reply"><span class="read">既読</span><span class="bub" x-text="therapistName + 'さんを指名'"></span></div>
+          <div class="v3-done"><span class="l"><i>✓</i><span x-text="therapistName + 'さんを指名'"></span></span><button type="button" @click="goStore()">✎ 変更</button></div>
+        </div>
+      </template>
+      <template x-if="scenario === 'store'">
+        <div>
+          <div x-show="!answered.includes('therapist')">
+            <div class="flex items-start gap-2 mt-3"><img src="icon-wp.svg" class="h-8 w-8 flex-none rounded-full border border-surface-700/15" alt=""><div class="chat-pop-l chat-bubble-box rounded-[18px] rounded-tl-md border border-surface-700/10 bg-bg-card px-4 py-3 text-[15px] leading-relaxed text-surface-100">ご指名はお決まりですか？<br><span class="text-[12px] text-surface-200/55">今日入れる方には緑バッジを付けています</span></div></div>
+            <button type="button" @click="pickFree()" class="bf-push mt-3 w-full rounded-2xl border border-primary-500/25 bg-primary-500/8 p-3.5 text-left cursor-pointer">
+              <span class="block text-[14px] font-bold text-surface-100">指名なしで予約</span>
+              <span class="mt-0.5 block text-[12px] text-surface-200/50">最短 <b class="text-primary-400" x-text="storeEarliestLabel"></b>・空いているセラピストで案内</span>
+            </button>
+            <div class="mt-3 v3-tgrid">
+              <template x-for="t in therapists" :key="t.puid">
+                <button type="button" class="v3-tcard" @click="pickTherapist(t)">
+                  <div class="ph"><span class="heart">♥</span>
+                    <span class="badge" :class="t.badgeClass" x-text="t.badge"></span>
+                  </div>
+                  <div class="nm"><span x-text="t.name"></span><small x-text="t.age + '歳 ' + t.height + 'cm'"></small></div>
+                </button>
+              </template>
+            </div>
+          </div>
+          <div x-show="answered.includes('therapist')">
+            <div class="v3-reply"><span class="read">既読</span><span class="bub" x-text="therapistName ? therapistName + 'さんを指名' : '指名なしでお願いします'"></span></div>
+            <div class="v3-done"><span class="l"><i>✓</i><span x-text="therapistName ? therapistName + 'さんを指名' : '指名なしで予約'"></span></span><button type="button" @click="editTherapist()">✎ 変更</button></div>
+          </div>
+        </div>
+      </template>
+    </section>
+
+    <!-- ===== 希望時間帯（v4: 枠一覧を出さず、時間帯で聞く） ===== -->
+    <section x-show="revealed.includes('datetime')" class="mt-5" id="sec-datetime">
+      <div class="flex items-start gap-2">
+        <img src="icon-wp.svg" class="h-8 w-8 flex-none rounded-full border border-surface-700/15" alt="">
+        <div class="chat-pop-l chat-bubble-box rounded-[18px] rounded-tl-md border border-surface-700/10 bg-bg-card px-4 py-3 text-[15px] leading-relaxed text-surface-100">
+          <span x-text="whoLabel"></span>のご希望はいつ頃ですか？<br>
+          <span class="text-[12px] text-surface-200/55">店舗が空きを確認して、ご案内できる時刻をSMSでお返事します</span>
+        </div>
+      </div>
+
+      <div x-show="!answered.includes('datetime')" class="mt-3">
+        <div class="v4-win">
+          <template x-for="w in windows" :key="w.key">
+            <button type="button" class="v4-w" :class="{now: w.key==='now', sel: selWin===w.key}" :disabled="!w.ok" @click="pickWindow(w)">
+              <span class="l" x-text="w.label"></span>
+              <span class="s" :class="{off: !w.ok}" x-text="w.sub"></span>
+            </button>
+          </template>
+        </div>
+
+        <!-- 今すぐ: 到着時間 -->
+        <div class="v4-sub" x-show="selWin==='now'">
+          <div class="q">店舗まで、あとどれくらいで着きますか？</div>
+          <div class="v4-chips">
+            <template x-for="a in arrivals" :key="a.min">
+              <button type="button" class="v4-chip" :class="{sel: arrival===a.min}" :disabled="!a.ok" @click="pickArrival(a)" x-text="a.label"></button>
+            </template>
+          </div>
+          <p class="v4-note">到着時刻を店舗に伝えて、入れる部屋とセラピストを店舗が確認します</p>
+        </div>
+
+        <!-- 明日以降: 日付 + 時間帯 -->
+        <div class="v4-sub" x-show="selWin==='later'">
+          <div class="q">日付と時間帯を選んでください</div>
+          <div class="v3-days">
+            <template x-for="(d, i) in days" :key="d.date">
+              <button type="button" class="v3-day" x-show="i > 0" :class="{sel: laterDay===i, off: !dayOpen(i)}" @click="laterDay = i; laterBand = ''">
+                <div class="dow" :class="{sat: d.dow===6, sun: d.dow===0}" x-text="d.top"></div>
+                <div class="md" x-text="d.md"></div>
+                <span class="cnt" :class="dayOpen(i)===0 ? 'none' : (dayOpen(i) <= 6 ? 'few' : '')" x-text="dayOpen(i)===0 ? '× 満枠' : (dayOpen(i) <= 6 ? '△ 残少' : '○ 空き')"></span>
+              </button>
+            </template>
+          </div>
+          <div class="v4-chips mt-2">
+            <template x-for="b in laterBands" :key="b.key">
+              <button type="button" class="v4-chip" :class="{sel: laterBand===b.key}" :disabled="!b.ok" @click="pickLaterBand(b)" x-text="b.label"></button>
+            </template>
+          </div>
+        </div>
+
+        <p class="mt-3 text-center text-[11px] text-surface-200/50">
+          時刻をご指定の場合は <button type="button" class="v3-link" @click="exact = !exact" x-text="exact ? '時間帯で選ぶに戻す' : '時間を指定する'"></button>
+        </p>
+
+        <!-- 時刻指定（v3 の日付ストリップ + 30分チップ。実枠を持つ店向け） -->
+        <div x-show="exact" class="mt-2 rounded-2xl border border-surface-700/15 bg-bg-card p-3">
+          <div class="v3-days">
+            <template x-for="(d, i) in days" :key="'x' + d.date">
+              <button type="button" class="v3-day" :class="{sel: selDay===i, off: !dayOpen(i)}" @click="selectDay(i)">
+                <div class="dow" :class="{sat: d.dow===6, sun: d.dow===0}" x-text="d.top"></div>
+                <div class="md" x-text="d.md"></div>
+                <span class="cnt" :class="dayOpen(i)===0 ? 'none' : (dayOpen(i) <= 6 ? 'few' : '')" x-text="dayOpen(i)===0 ? '× 満枠' : (dayOpen(i) <= 6 ? '△ 残少' : '○ 空き')"></span>
+              </button>
+            </template>
+          </div>
+          <template x-for="band in bands" :key="band.label">
+            <div class="v3-band" x-show="band.slots.length && band.open">
+              <h4><span x-text="band.label"></span><span class="font-normal" x-text="'空き ' + band.open + '枠'"></span></h4>
+              <div class="v3-times">
+                <template x-for="s in band.slots" :key="s.time">
+                  <button type="button" class="v3-t" :class="{few: s.status==='few', ng: !bookable(s), sel: selSlot && selSlot.time===s.time}" :disabled="!bookable(s)" @click="pickSlot(s)" x-text="s.time"></button>
+                </template>
+              </div>
+            </div>
+          </template>
+          <p class="v4-note">○ は出勤予定の時間です。確定は店舗の確認後になります</p>
+        </div>
+      </div>
+
+      <div x-show="answered.includes('datetime')">
+        <div class="v3-reply"><span class="read">既読</span><span class="bub" x-text="dtLabel"></span></div>
+        <div class="v3-done"><span class="l"><i>✓</i><span x-text="dtLabel"></span></span><button type="button" @click="edit('datetime')">✎ 変更</button></div>
+      </div>
+    </section>
+
+    <!-- ===== コース（インライン） ===== -->
+    <section x-show="revealed.includes('course')" class="mt-5" id="sec-course">
+      <div class="flex items-start gap-2">
+        <img src="icon-wp.svg" class="h-8 w-8 flex-none rounded-full border border-surface-700/15" alt="">
+        <div class="chat-pop-l chat-bubble-box rounded-[18px] rounded-tl-md border border-surface-700/10 bg-bg-card px-4 py-3 text-[15px] leading-relaxed text-surface-100">コースはどちらにしますか？<br><span class="text-[12px] text-surface-200/55">時間をタップで決定。料金は目安です</span></div>
+      </div>
+      <div x-show="!answered.includes('course')" class="mt-3">
+        <template x-for="g in courseGroups" :key="g.key">
+          <div class="v3-course">
+            <div class="nm"><span x-text="g.name"></span><span class="pop" x-show="g.popular">人気No.1</span></div>
+            <div class="desc" :class="{open: g.open}" x-text="g.description"></div>
+            <button type="button" class="v3-link" style="font-size:11px" @click="g.open = !g.open" x-text="g.open ? '閉じる' : '詳細を見る'"></button>
+            <div class="v3-durs">
+              <template x-for="c in g.courses" :key="c.id">
+                <button type="button" class="v3-dur" @click="pickCourse(c)"><b x-text="c.duration + '分'"></b> <span x-text="'¥' + c.price.toLocaleString() + (c.from ? '〜' : '')"></span></button>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div x-show="answered.includes('course')">
+        <div class="v3-reply"><span class="read">既読</span><span class="bub" x-text="courseLabel"></span></div>
+        <div class="v3-done"><span class="l"><i>✓</i><span x-text="courseLabel"></span></span><button type="button" @click="edit('course')">✎ 変更</button></div>
+      </div>
+    </section>
+
+    <!-- ===== オプション（インライン） ===== -->
+    <section x-show="revealed.includes('options')" class="mt-5" id="sec-options">
+      <div class="flex items-start gap-2">
+        <img src="icon-wp.svg" class="h-8 w-8 flex-none rounded-full border border-surface-700/15" alt="">
+        <div class="chat-pop-l chat-bubble-box rounded-[18px] rounded-tl-md border border-surface-700/10 bg-bg-card px-4 py-3 text-[15px] leading-relaxed text-surface-100">オプションはいかがですか？<br><span class="text-[12px] text-surface-200/55">不要ならそのまま「なしで進む」でOK</span></div>
+      </div>
+      <div x-show="!answered.includes('options')" class="mt-3">
+        <template x-for="o in options" :key="o.id">
+          <button type="button" class="v3-opt" :class="{sel: selOpts.includes(o.id)}" @click="toggleOpt(o.id)">
+            <span class="cb" x-text="selOpts.includes(o.id) ? '✓' : ''"></span>
+            <span class="nm" x-text="o.name"></span>
+            <span class="pr" x-text="'+¥' + o.price.toLocaleString()"></span>
+          </button>
+        </template>
+        <button type="button" class="bf-push mt-2 flex w-full items-center justify-between rounded-2xl border border-surface-700/20 bg-bg-card px-3.5 py-3 text-[13px] font-bold text-surface-200/70 cursor-pointer" @click="feeOpen = !feeOpen">
+          <span>その他の料金 <span class="font-normal text-surface-200/50">延長・指名料 など</span></span><span x-text="feeOpen ? '▴' : '▾'"></span>
+        </button>
+        <div x-show="feeOpen" class="mt-1.5 rounded-xl bg-bg-elevated px-3 py-2 text-[12px] text-surface-200/70">延長10分 +¥2,000 ／ 写真指名 +¥1,000 ／ 本指名 +¥2,000（指名料は自動で加算されます）</div>
+        <button type="button" class="bf-push-primary mt-3 w-full rounded-full bg-teal-600 py-3.5 text-[15px] font-extrabold text-white cursor-pointer" @click="confirmOptions()" x-text="selOpts.length ? 'この内容で決定（' + selOpts.length + '件 +¥' + optTotal.toLocaleString() + '）' : 'オプションなしで進む'"></button>
+      </div>
+      <div x-show="answered.includes('options')">
+        <div class="v3-reply"><span class="read">既読</span><span class="bub" x-text="optLabel"></span></div>
+        <div class="v3-done"><span class="l"><i>✓</i><span x-text="optLabel"></span></span><button type="button" @click="edit('options')">✎ 変更</button></div>
+      </div>
+    </section>
+
+    <!-- ===== 連絡先 + 確認（ひとつのカード） ===== -->
+    <section x-show="revealed.includes('contact') && !done" class="mt-5" id="sec-contact">
+      <div class="flex items-start gap-2">
+        <img src="icon-wp.svg" class="h-8 w-8 flex-none rounded-full border border-surface-700/15" alt="">
+        <div class="chat-pop-l chat-bubble-box rounded-[18px] rounded-tl-md border border-surface-700/10 bg-bg-card px-4 py-3 text-[15px] leading-relaxed text-surface-100">最後です！ご案内時刻のSMSを受け取る連絡先をお願いします<br><span class="text-[12px] text-surface-200/55">この2つだけで送信できます</span></div>
+      </div>
+
+      <div class="mt-3 rounded-2xl border border-surface-700/15 bg-bg-card p-3.5">
+        <div class="v3-field" style="margin-top:0">
+          <label>電話番号 <small>ご案内時刻のSMSが届きます</small></label>
+          <input type="tel" inputmode="numeric" autocomplete="tel" placeholder="090 1234 5678" class="v3-in tel" :class="{ok: phoneOk}" x-model="phone" @input="onPhoneInput()" x-ref="phone">
+          <p class="v3-hint" :class="{ok: phoneOk, err: phoneTouched && phone && !phoneOk}" x-text="phoneOk ? '✓ OK。店舗からの連絡のみに使います' : (phoneTouched && phone ? '番号は10〜11桁で入力してください' : '店舗からの連絡のみに使用。営業連絡はありません')"></p>
+        </div>
+        <div class="v3-field">
+          <label>お名前 <small>ニックネーム可</small></label>
+          <input type="text" autocomplete="name" placeholder="例）たなか" class="v3-in" :class="{ok: nameOk}" x-model="name" x-ref="name" @keydown.enter="$refs.name.blur()">
+        </div>
+        <div class="v3-field">
+          <button type="button" class="v3-link" x-show="!noteOpen" @click="noteOpen = true; $nextTick(() => $refs.note.focus())">＋ ご要望・質問を添える（任意）</button>
+          <div x-show="noteOpen">
+            <label>ご要望・ご質問 <span class="opt">任意</span></label>
+            <textarea rows="2" placeholder="例）駐車場はありますか？" class="v3-in" style="font-size:15px" x-model="note" x-ref="note"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 送信前サマリー（連絡先の直下。CTA は固定フッター） -->
+      <div class="v3-sum mt-3">
+        <div class="text-[12px] font-bold text-primary-300 mb-2">ご予約リクエスト内容</div>
+        <dl>
+          <dt>ご希望</dt><dd x-text="dtLabel"></dd><button type="button" class="ed" @click="edit('datetime')">変更</button>
+          <dt>ご案内時刻</dt><dd class="font-normal text-surface-200/70">店舗が決めてSMSでお知らせ</dd><span></span>
+          <dt>コース</dt><dd x-text="courseLabel"></dd><button type="button" class="ed" @click="edit('course')">変更</button>
+          <dt>指名</dt><dd x-text="therapistName ? therapistName + 'さん' : '指名なし'"></dd><button type="button" class="ed" @click="goStore()">変更</button>
+          <template x-if="selOpts.length"><dt>オプション</dt></template><template x-if="selOpts.length"><dd x-text="optLabel"></dd></template><template x-if="selOpts.length"><button type="button" class="ed" @click="edit('options')">変更</button></template>
+          <template x-if="therapistName"><dt>指名料</dt></template><template x-if="therapistName"><dd>¥1,000 <span class="font-normal text-[11px] text-surface-200/50">来店歴がある場合は本指名料</span></dd></template><template x-if="therapistName"><span></span></template>
+        </dl>
+        <p class="mt-2 text-[11px] leading-relaxed text-amber-700/90">合計は目安です。指名料・延長などにより実際のお支払い額は変わる場合があります。</p>
+      </div>
+      <p class="mt-2 text-[11px] leading-relaxed text-surface-200/45">ご入力内容は予約先店舗へ共有され、予約連絡のみに使用します。<u>プライバシーポリシー</u></p>
+      <button type="button" class="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-surface-700/30 bg-bg-elevated py-2.5 text-[12px] font-bold text-surface-200/70 cursor-pointer">不安な点があるので電話で相談したい</button>
+    </section>
+
+    <!-- ===== 完了（v4: SMS の流れをそのまま見せる） ===== -->
+    <section x-show="done" class="mt-5" id="sec-done">
+      <div class="flex items-start gap-2">
+        <img src="icon-wp.svg" class="h-8 w-8 flex-none rounded-full border border-surface-700/15" alt="">
+        <div class="chat-pop-l chat-bubble-box rounded-[18px] rounded-tl-md border border-surface-700/10 bg-bg-card px-4 py-3 text-[15px] leading-relaxed text-surface-100">予約リクエストを店舗へ送りました。店舗が空きを確認して、ご案内できる時刻を <b x-text="phoneMasked"></b> へSMSでお知らせします</div>
+      </div>
+
+      <div class="chat-pop-l ml-10 mt-3 max-w-[92%] rounded-2xl border border-emerald-500/25 bg-bg-card p-4">
+        <div class="flex items-center justify-between gap-2">
+          <span class="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[12px] font-black text-emerald-400">✓ 送信完了</span>
+          <span class="text-[11px] text-surface-200/50">予約番号 <span class="font-bold text-surface-100">R8K2M4</span></span>
+        </div>
+        <dl class="mt-3 space-y-1.5 border-b border-surface-700/20 pb-3 text-[13px]">
+          <div class="flex gap-3"><dt class="w-16 shrink-0 text-surface-200/50">ご希望</dt><dd class="font-bold text-surface-100" x-text="dtLabel"></dd></div>
+          <div class="flex gap-3"><dt class="w-16 shrink-0 text-surface-200/50">コース</dt><dd class="text-surface-100" x-text="courseLabel"></dd></div>
+          <div class="flex gap-3"><dt class="w-16 shrink-0 text-surface-200/50">指名</dt><dd class="text-surface-100" x-text="therapistName ? therapistName + 'さん' : '指名なし'"></dd></div>
+          <div class="flex gap-3"><dt class="w-16 shrink-0 text-surface-200/50">合計目安</dt><dd class="font-extrabold text-surface-100" x-text="totalLabel"></dd></div>
+        </dl>
+
+        <div class="mt-3 text-[11px] font-bold text-surface-200/50">SMS でのやりとり</div>
+        <div class="v4-sms"><span class="ic">✉</span><div class="bx" x-text="smsReceived"></div></div>
+        <div class="v4-t">たった今・メンエスなうから</div>
+        <template x-if="!storeReply">
+          <div>
+            <div class="v4-sms"><span class="ic" style="background:#f59e0b">…</span><div class="bx wait">店舗が空きを確認しています。営業時間内に返信があります。返信が無い場合はメンエスなうからご連絡します</div></div>
+            <button type="button" class="mt-3 w-full rounded-full border border-surface-700/30 bg-bg-elevated py-2.5 text-[12px] font-bold text-surface-200/80 cursor-pointer" @click="storeOpen = true">▶ 店舗側の画面でこのリクエストに返答する（デモ）</button>
+          </div>
+        </template>
+        <template x-if="storeReply && storeReply.kind === 'ok'">
+          <div>
+            <div class="v4-sms"><span class="ic">✉</span><div class="bx ok" x-text="smsConfirmed"></div></div>
+            <div class="v4-t">店舗が返答・メンエスなうから</div>
+            <div class="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-[13px] font-bold text-emerald-700">ご予約が確定しました：<span x-text="storeReply.time"></span>〜</div>
+          </div>
+        </template>
+        <template x-if="storeReply && storeReply.kind === 'ng'">
+          <div>
+            <div class="v4-sms"><span class="ic" style="background:#64748b">✉</span><div class="bx" x-text="smsRejected"></div></div>
+            <button type="button" class="mt-3 w-full rounded-full bg-teal-600 py-3 text-[14px] font-extrabold text-white cursor-pointer" @click="location.reload()">別の時間帯で送り直す</button>
+          </div>
+        </template>
+
+        <div class="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+          <p class="text-[12px] leading-relaxed text-surface-200/70">確実にご予約されたい場合は店舗へ直接お電話ください。</p>
+          <a href="#" class="mt-1 inline-flex items-center gap-1.5 text-[14px] font-extrabold text-surface-100 underline">070-4291-8367</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== 送信確認シート ===== -->
+  <div class="v4-sheet" x-show="confirmOpen" x-cloak @click.self="confirmOpen = false">
+    <div>
+      <h3>この内容で予約リクエストを送信しますか？</h3>
+      <div class="v3-sum">
+        <dl>
+          <dt>ご希望</dt><dd x-text="dtLabel"></dd><span></span>
+          <dt>指名</dt><dd x-text="therapistName ? therapistName + 'さん' : '指名なし'"></dd><span></span>
+          <dt>コース</dt><dd x-text="courseLabel"></dd><span></span>
+          <dt>お名前</dt><dd x-text="name"></dd><span></span>
+          <dt>SMS先</dt><dd x-text="phone"></dd><span></span>
+        </dl>
+      </div>
+      <p class="v4-note">送信後、店舗が空きを確認して <b>ご案内できる時刻を SMS</b> でお知らせします。決済はありません。</p>
+      <button type="button" class="btn go" @click="submit()"><span x-show="!submitting">送信する</span><span x-show="submitting">送信中…</span></button>
+      <button type="button" class="btn back" @click="confirmOpen = false">戻って直す</button>
+    </div>
+  </div>
+
+  <!-- ===== 店舗側の返答画面（デモ） ===== -->
+  <div class="v4-store" x-show="storeOpen" x-cloak>
+    <div>
+      <header>
+        <div>予約リクエスト <small>店舗管理 › 未対応 1件（デモ）</small></div>
+        <button type="button" @click="storeOpen = false">お客側に戻る</button>
+      </header>
+      <div class="v4-req">
+        <span class="tag">未対応・SMS通知済み</span>
+        <div class="big" x-text="dtLabel"></div>
+        <dl class="mt-2">
+          <dt>指名</dt><dd x-text="therapistName ? therapistName + 'さん' : '指名なし（フリー）'"></dd>
+          <dt>コース</dt><dd x-text="courseLabel"></dd>
+          <dt>お客様</dt><dd x-text="name + ' 様（' + phoneMasked + '）'"></dd>
+          <dt>備考</dt><dd class="font-normal" x-text="note || '—'"></dd>
+        </dl>
+        <h4>ご案内できる時刻をタップ <span class="font-normal text-[11px]" style="color:#64748b">（ご希望の範囲で出勤表から候補を出しています）</span></h4>
+        <div class="v4-tc">
+          <template x-for="t in storeChoices" :key="t.time">
+            <button type="button" :class="{sel: storePick===t.time}" @click="storePick = t.time" x-text="t.time"></button>
+          </template>
+        </div>
+        <p class="v4-note" x-show="!storeChoices.length">出勤表に候補がありません。別の時刻を手入力するか、承れない旨を返してください</p>
+        <div class="prev" x-show="storePick">お客様に届くSMS:
+<span x-text="smsPreview"></span></div>
+        <button type="button" class="act" :disabled="!storePick" @click="storeConfirm()">この時刻で確定してSMSを送る</button>
+        <button type="button" class="act ng" @click="storeReject()">この時間帯は承れない（SMSで返答）</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 固定フッター CTA（連絡先セクション出現と同時に表示） ===== -->
+  <div class="v3-cta" x-show="ctaVisible" x-transition.opacity>
+    <div>
+      <div class="row">
+        <span>合計目安 <b x-text="totalLabel"></b></span>
+        <span x-show="!canSubmit" class="miss" x-text="missingLabel"></span>
+        <span x-show="canSubmit" class="text-emerald-600 font-bold">入力OK</span>
+      </div>
+      <button type="button" class="main bf-push-primary" :class="canSubmit ? 'chat-reflect' : ''" :disabled="!canSubmit" @click="confirmOpen = true">
+        <span>予約リクエストを送信</span>
+      </button>
+      <div class="sub">決済なし・お支払いは店舗にて・ご案内時刻は店舗からSMSで届きます</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js" defer></script>
+<script>
+function bookingV4() {
+  const q = new URLSearchParams(location.search);
+  const scenario = q.get('from') || (q.get('therapist') ? 'therapist' : 'store');   // therapist | store | full
+  const nowMin = (() => { const d = new Date(); const m = d.getHours() * 60 + d.getMinutes(); return m < 11 * 60 || m > 23 * 60 ? 13 * 60 + 5 : m; })();
+  const DOW = ['日','月','火','水','木','金','土'];
+
+  // --- 本番 availability JSON と同じ形のダミー（PePe SPA の実名・実コース） ---
+  const therapistsRaw = [
+    { puid:"T6726", name:"碧えくぼ", age:21, height:167, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_6726.jpeg" },
+    { puid:"T7435", name:"神楽あいり", age:23, height:160, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_7435.jpeg" },
+    { puid:"T7714", name:"東雲しの", age:23, height:166, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_7714.jpeg" },
+    { puid:"T7730", name:"伏見　すみれ", age:26, height:164, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_7730.jpeg" },
+    { puid:"T8819", name:"星川るな", age:25, height:162, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_8819.jpeg" },
+    { puid:"T9237", name:"飛鳥あおい", age:23, height:160, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9237.jpeg" },
+    { puid:"T9287", name:"川口みき", age:25, height:160, today_start:"13:00", today_end:"17:00", image_url:"https://www.pepespa.com/images/ml_11_1_9287.jpeg" },
+    { puid:"T9288", name:"前田ゆいか", age:26, height:163, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9288.jpg" },
+    { puid:"T9294", name:"七川こよみ", age:25, height:159, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9294.jpeg" },
+    { puid:"T9310", name:"蓮見 ゆあ", age:25, height:160, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9310.jpeg" },
+    { puid:"T9367", name:"谷崎　ふうか", age:24, height:154, today_start:"13:00", today_end:"18:00", image_url:"https://www.pepespa.com/images/ml_11_1_9367.jpeg" },
+    { puid:"T9369", name:"糸師りの", age:26, height:162, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9369.jpeg" },
+    { puid:"T9402", name:"結城ゆあ", age:26, height:160, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9402.jpeg" },
+    { puid:"T9412", name:"北川みさと", age:32, height:156, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9412.jpeg" },
+    { puid:"T9892", name:"本田いと", age:26, height:160, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9892.jpeg" },
+    { puid:"T10119", name:"蒼井みく", age:27, height:160, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_10119.jpeg" },
+    { puid:"T10225", name:"朝比奈めい", age:36, height:160, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_10225.jpg" },
+    { puid:"T10228", name:"愛川りこ【new face】", age:22, height:168, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_10228.jpg" },
+    { puid:"T34172", name:"宇宙　さき", age:28, height:161, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_6651.jpeg" },
+    { puid:"T34173", name:"小鳥遊　ちえり", age:22, height:155, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_6704.jpeg" },
+    { puid:"T34174", name:"三船ことね", age:36, height:158, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_34174.jpg" },
+    { puid:"T34193", name:"椿るり", age:24, height:159, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_7089.jpeg" },
+    { puid:"T34209", name:"松井　みな", age:27, height:154, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_7298.jpg" },
+    { puid:"T34305", name:"響　ひかる", age:19, height:159, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_8213.jpeg" },
+    { puid:"T34321", name:"由良　ゆら", age:26, height:160, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_8293.jpeg" },
+    { puid:"T34382", name:"佐藤しお", age:21, height:161, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_8595.jpeg" },
+    { puid:"T34419", name:"若月　あんな", age:24, height:158, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_8775.jpeg" },
+    { puid:"T34434", name:"白雪　める", age:21, height:158, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_8891.jpeg" },
+    { puid:"T34437", name:"最上あや", age:20, height:169, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_8903.jpeg" },
+    { puid:"T34476", name:"大谷　かのん", age:25, height:155, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9146.jpeg" },
+    { puid:"T34480", name:"倉田ゆき", age:26, height:164, today_start:"19:30", today_end:"05:00", image_url:"https://www.pepespa.com/images/ml_11_1_9155.jpeg" },
+    { puid:"T34505", name:"青葉りんか", age:24, height:160, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9274.jpeg" },
+    { puid:"T34506", name:"白雪める", age:21, height:158, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9276.jpeg" },
+    { puid:"T34509", name:"鎌田れい", age:24, height:156, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9285.jpeg" },
+    { puid:"T34516", name:"石森うか", age:26, height:162, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9342.jpg" },
+    { puid:"T34518", name:"天谷　ちづる", age:26, height:156, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9387.jpeg" },
+    { puid:"T34542", name:"長谷川ゆみ", age:27, height:158, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9558.jpeg" },
+    { puid:"T34610", name:"夢咲　ことり", age:24, height:151, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9838.jpeg" },
+    { puid:"T34626", name:"七瀬るい", age:24, height:149, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_9951.jpeg" },
+    { puid:"T34643", name:"白川まり", age:24, height:150, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_10036.jpeg" },
+    { puid:"T34648", name:"谷口はんな", age:27, height:157, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_10052.jpeg" },
+    { puid:"T34667", name:"月乃はな", age:26, height:164, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_10117.jpeg" },
+    { puid:"T34685", name:"丸山まいこ", age:33, height:168, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_10222.jpg" },
+    { puid:"T34733", name:"橘みれい", age:22, height:161, today_start:"18:00", today_end:"03:00", image_url:"https://www.pepespa.com/images/ml_11_1_10632.jpg" },
+    { puid:"T34734", name:"南ゆうな", age:24, height:153, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_10634.jpg" },
+    { puid:"T53098", name:"星咲らら", age:24, height:167, today_start:"13:00", today_end:"19:30", image_url:"https://www.pepespa.com/images/ml_11_1_53098.jpg" },
+    { puid:"T53101", name:"佐々木もえ", age:41, height:160, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_53101.jpg" },
+    { puid:"T53102", name:"深田えみ", age:38, height:163, today_start:null, today_end:null, image_url:"https://www.pepespa.com/images/ml_11_1_53102.jpg" },
+    { puid:"T53104", name:"大沢あい", age:40, height:158, today_start:"15:00", today_end:"21:00", image_url:"https://www.pepespa.com/images/ml_11_1_53104.jpg" },
+  ];
+  const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const fmt = (min) => `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
+  const seeded = (n) => { const x = Math.sin(n * 9301 + 49297) * 233280; return x - Math.floor(x); };
+
+  // 7 日分 × 10 分きざみ（11:00〜24:00）。本日のシフトは today_start〜end、他日は疑似シフト
+  function buildDays(t, allFull) {
+    const base = new Date(); base.setHours(0, 0, 0, 0);
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(base); d.setDate(base.getDate() + i);
+      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const label = i === 0 ? '今日' : i === 1 ? '明日' : `${d.getMonth() + 1}/${d.getDate()}(${DOW[d.getDay()]})`;
+      let start, end;
+      if (i === 0) { start = t && t.today_start ? toMin(t.today_start) : 11 * 60; end = t && t.today_end ? toMin(t.today_end) : 24 * 60; if (t && !t.today_start) { start = end = 0; } }
+      else { const r = seeded(i * 7 + (t ? t.puid.charCodeAt(0) : 3)); start = r < 0.25 ? 0 : (12 + Math.floor(r * 8)) * 60; end = start ? Math.min(24 * 60, start + 300 + Math.floor(seeded(i + 11) * 240)) : 0; }
+      if (allFull && i === 0) { start = end = 0; }
+      const slots = [];
+      for (let m = 11 * 60; m < 24 * 60; m += 10) {
+        let status = 'ng';
+        if (m >= start && m < end) {
+          status = (i === 0 && m < nowMin + 20) ? 'ng' : 'ok';  // 最短受付 20 分
+          if (status === 'ok' && seeded(m + i * 13) < 0.12) status = 'ng';
+          if (status === 'ok' && seeded(m * 3 + i) < 0.1) status = 'few';
+        }
+        slots.push({ time: fmt(m), hour: Math.floor(m / 60), minute: m % 60, min: m, status });
+      }
+      days.push({ date, label, top: i === 0 ? '今日' : i === 1 ? '明日' : DOW[d.getDay()], md: `${d.getMonth() + 1}/${d.getDate()}`, dow: d.getDay(), slots });
+    }
+    return days;
+  }
+
+  const courses = [
+    { id: 1, group: 'はじめましてコース', duration: 75, price: 12000, popular: true, description: '下記オプションからおひとつ無料でサービス。施術内容は PePe SPA コースと同様です。他の割引きと併用不可。初めてご案内するセラピストに限り適用されますので、当店のリピーター様もご利用いただけます。' },
+    { id: 2, group: 'PePe SPAコース', duration: 75, price: 15000, from: true, description: '下記オプションからお一つ無料でサービス致します。鼠径部マッサージ込み。' },
+    { id: 3, group: 'PePe SPAコース', duration: 90, price: 18000, from: true, description: '' },
+    { id: 4, group: 'PePe SPAコース', duration: 120, price: 24000, from: true, description: '' },
+  ];
+  const options = [{ id: 1, name: 'ホイップ、パウダー、お着替え', price: 2000 }];
+
+  return {
+    scenario,
+    greeting: '',
+    revealed: [], answered: [],
+    therapistPuid: '', therapistName: '',
+    therapists: [], days: [], selDay: 0, selSlot: null, fine: false,
+    selCourse: null, selOpts: [], feeOpen: false,
+    // --- v4: 時間帯リクエスト ---
+    selWin: '', arrival: null, laterDay: 1, laterBand: '', exact: false,
+    confirmOpen: false, storeOpen: false, storePick: '', storeReply: null,
+    phone: '', name: '', note: '', noteOpen: false, phoneTouched: false,
+    submitting: false, done: false,
+    courseGroups: [],
+    options,
+
+    init() {
+      this.greeting = 'こんにちは！『PePe SPA 蒲田』予約コンシェルジュです。ご希望の時間帯をお送りいただければ、店舗がご案内できる時刻をSMSでお返事します';
+      this.therapists = therapistsRaw.map((t) => {
+        const days = buildDays(t, false);
+        const openCount = days[0].slots.filter((s) => s.status === 'ok' || s.status === 'few').length;
+        const first = days[0].slots.find((s) => s.status === 'ok' || s.status === 'few');
+        let badge = '本日なし', badgeClass = 'full';
+        if (t.today_start && openCount) { badge = `今日 ${first.time}〜`; badgeClass = toMin(t.today_start) > nowMin ? 'later' : ''; }
+        else if (t.today_start) { badge = '本日満枠'; badgeClass = 'full'; }
+        return Object.assign({}, t, { days, openCount, badge, badgeClass });
+      });
+      // コース系列
+      const map = new Map();
+      for (const c of courses) {
+        if (!map.has(c.group)) map.set(c.group, { key: c.group, name: c.group, courses: [], description: '', popular: false, open: false });
+        const g = map.get(c.group); g.courses.push(c); g.popular = g.popular || !!c.popular; if (!g.description && c.description) g.description = c.description;
+      }
+      this.courseGroups = [...map.values()];
+
+      if (scenario === 'store') {
+        this.days = buildDays(null, false);
+        this.revealed.push('therapist');
+      } else {
+        const want = q.get('therapist'); const t = this.therapists.find((x) => x.puid === want) || this.therapists[1];
+        this.therapistPuid = t.puid; this.therapistName = t.name;
+        this.days = buildDays(t, scenario === 'full');
+        this.revealed.push('therapist'); this.answered.push('therapist');
+        this.revealed.push('datetime');
+      }
+      this.selDay = this.earliest ? this.earliest.dayIndex : (this.nextOpenDay() >= 0 ? this.nextOpenDay() : 0);
+      const step = q.get('step');
+      if (step === 'contact' || q.get('view') === 'store') { const w = this.windows.find((x) => x.key === '60' && x.ok) || this.windows.find((x) => x.ok); this.pickWindow(w); if (w.key === 'now') this.pickArrival(this.arrivals.find((a) => a.ok)); this.pickCourse(courses[0]); this.confirmOptions(); }
+      if (q.get('view') === 'store') { this.phone = '090 1234 5678'; this.name = 'たなか'; this.done = true; this.storeOpen = true; }
+    },
+
+    // --- 進捗 ---
+    get stepLabel() { if (this.answered.includes('options')) return 'あと1問'; if (this.answered.includes('datetime')) return 'あと2問'; return 'あと3問'; },
+    progClass(i) { const n = this.answered.includes('options') ? 2 : this.answered.includes('datetime') ? 1 : 0; return i < n ? 'done' : i === n ? 'on' : ''; },
+
+    // --- 日時 ---
+    bookable(s) { return !!s && (s.status === 'ok' || s.status === 'few'); },
+    dayOpen(i) { const d = this.days[i]; return d ? d.slots.filter((s) => this.bookable(s)).length : 0; },
+    nextOpenDay() { for (let i = 0; i < this.days.length; i++) if (this.dayOpen(i)) return i; return -1; },
+    get whoLabel() { return this.therapistName ? `${this.therapistName}さん` : 'この店舗'; },
+    get earliest() {
+      for (let i = 0; i < Math.min(2, this.days.length); i++) {
+        const s = this.days[i].slots.find((x) => this.bookable(x));
+        if (s) return Object.assign({}, s, { dayIndex: i, dayLabel: this.days[i].label });
+      }
+      return null;
+    },
+    get earliestLabel() { return this.earliest ? `${this.earliest.dayLabel} ${this.earliest.time}〜` : ''; },
+    get tonight() { const d = this.days[0]; if (!d) return null; const s = d.slots.find((x) => this.bookable(x) && x.min >= 19 * 60); return s ? Object.assign({}, s, { dayIndex: 0, dayLabel: '今日' }) : null; },
+    get tomorrowFirst() { const d = this.days[1]; if (!d) return null; const s = d.slots.find((x) => this.bookable(x)); return s ? Object.assign({}, s, { dayIndex: 1, dayLabel: '明日' }) : null; },
+    get storeEarliestLabel() { const t = this.therapists.filter((x) => x.openCount).sort((a, b) => toMin(a.days[0].slots.find((s) => this.bookable(s)).time) - toMin(b.days[0].slots.find((s) => this.bookable(s)).time))[0]; return t ? `今日 ${t.days[0].slots.find((s) => this.bookable(s)).time}〜` : '明日以降'; },
+    get altToday() { return this.therapists.filter((t) => t.puid !== this.therapistPuid && t.openCount).slice(0, 2); },
+    get bands() {
+      const d = this.days[this.selDay]; if (!d) return [];
+      const defs = [{ label: '昼', from: 11 * 60, to: 17 * 60 }, { label: '夕方', from: 17 * 60, to: 20 * 60 }, { label: '夜', from: 20 * 60, to: 24 * 60 }];
+      return defs.map((b) => {
+        let slots = d.slots.filter((s) => s.min >= b.from && s.min < b.to);
+        if (!this.fine) {
+          // 30 分きざみ: その 30 分内に空きがあれば先頭の空き枠を代表にする（なければ ng 表示）
+          const grouped = [];
+          for (let m = b.from; m < b.to; m += 30) {
+            const win = slots.filter((s) => s.min >= m && s.min < m + 30);
+            if (!win.length) continue;
+            const open = win.find((s) => this.bookable(s));
+            grouped.push(open ? Object.assign({}, open, { time: open.minute % 30 === 0 ? open.time : open.time }) : Object.assign({}, win[0], { status: 'ng' }));
+          }
+          slots = grouped;
+        }
+        // 当日の過去枠は非表示（× の山を見せない）
+        if (this.selDay === 0) slots = slots.filter((s) => s.min >= nowMin);
+        const open = slots.filter((s) => this.bookable(s)).length;
+                return { label: b.label, slots, open };
+      });
+    },
+    selectDay(i) { this.selDay = i; this.selSlot = null; },
+    quickPick(s) { if (!s) return; this.selDay = s.dayIndex; this.pickSlot(s); },
+    pickSlot(s) {
+      if (!this.bookable(s)) return;
+      this.selSlot = s; this.selWin = 'exact';
+      this.answer('datetime');
+    },
+    // ── v4: 時間帯 ──
+    _firstOpen(dayIdx, fromMin, toMin) {
+      const d = this.days[dayIdx]; if (!d) return null;
+      return d.slots.find((s) => this.bookable(s) && s.min >= fromMin && s.min <= toMin) || null;
+    },
+    get windows() {
+      const t = this.therapistPuid ? this.therapists.find((x) => x.puid === this.therapistPuid) : null;
+      const startsLater = t && t.today_start && toMin(t.today_start) > nowMin;
+      const offSub = (first) => first ? '' : (t && !t.today_start ? '本日出勤なし' : this.dayOpen(0) === 0 ? '本日満枠' : startsLater ? `${t.today_start} 出勤` : '満枠');
+      const mk = (key, label, toM) => {
+        const first = this._firstOpen(0, nowMin, toM);
+        return { key, label, ok: !!first, first, sub: first ? `${first.time}〜 入れます` : offSub(first) };
+      };
+      const now = this._firstOpen(0, nowMin, nowMin + 60);
+      const today = this._firstOpen(0, nowMin, 24 * 60);
+      let later = null, laterIdx = -1;
+      for (let i = 1; i < this.days.length && !later; i++) { later = this._firstOpen(i, 0, 24 * 60); if (later) laterIdx = i; }
+      return [
+        { key: 'now', label: '今すぐ', ok: !!now, first: now, sub: now ? '今から向かう' : offSub(now) },
+        mk('30', '30分以内', nowMin + 30),
+        mk('60', '1時間以内', nowMin + 60),
+        mk('180', '3時間以内', nowMin + 180),
+        { key: 'today', label: '本日中', ok: !!today, first: today, sub: today ? `${today.time}〜 入れます` : offSub(today) },
+        { key: 'later', label: '明日以降', ok: !!later, first: later, sub: later ? `${this.days[laterIdx].label} ${later.time}〜` : '空きなし' },
+      ];
+    },
+    get arrivals() {
+      return [10, 20, 30, 45].map((m) => ({ min: m, label: m === 45 ? '45分以上' : `約${m}分`, ok: !!this._firstOpen(0, nowMin + m - 10, nowMin + m + 40) }));
+    },
+    get laterBands() {
+      const defs = [{ key: 'am', label: '昼（〜17時）', from: 0, to: 17 * 60 }, { key: 'pm', label: '夕方（17〜20時）', from: 17 * 60, to: 20 * 60 }, { key: 'night', label: '夜（20時〜）', from: 20 * 60, to: 30 * 60 }];
+      return defs.map((b) => ({ ...b, ok: !!this._firstOpen(this.laterDay, b.from, b.to) }));
+    },
+    pickWindow(w) {
+      if (!w.ok) return;
+      this.selWin = w.key; this.selSlot = null; this.arrival = null; this.laterBand = ''; this.exact = false;
+      if (w.key === 'now' || w.key === 'later') return;   // サブ質問へ
+      this.selDay = 0; this.selSlot = w.first;
+      this.answer('datetime');
+    },
+    pickArrival(a) { if (!a.ok) return; this.arrival = a.min; this.selDay = 0; this.selSlot = this._firstOpen(0, nowMin + a.min - 10, nowMin + a.min + 40); this.answer('datetime'); },
+    pickLaterBand(b) { if (!b.ok) return; this.laterBand = b.key; this.selDay = this.laterDay; this.selSlot = this._firstOpen(this.laterDay, b.from, b.to); this.answer('datetime'); },
+    get winLabel() { return (this.windows.find((w) => w.key === this.selWin) || {}).label || ''; },
+    get dtLabel() {
+      if (this.selWin === 'exact' || (this.exact && this.selSlot)) return this.selSlot ? `${this.days[this.selDay].label} ${this.selSlot.time}〜（時刻指定）` : '';
+      if (this.selWin === 'now') return this.arrival ? `今すぐ（到着 約${this.arrival === 45 ? '45分以上' : this.arrival + '分'}後）` : '';
+      if (this.selWin === 'later') { const b = this.laterBands.find((x) => x.key === this.laterBand); return b ? `${this.days[this.laterDay].label} ${b.label.split('（')[0]}` : ''; }
+      if (this.selWin === 'today') return '本日中';
+      if (this.selWin) return `${this.winLabel}（〜${fmt(nowMin + Number(this.selWin))}）`;
+      return '';
+    },
+    // 店舗側: 希望の範囲内で出勤表から出す候補（30 分きざみ・最大 6）
+    get storeChoices() {
+      const d = this.days[this.selDay]; if (!d || !this.selSlot) return [];
+      let from = this.selSlot.min, to = from + 180;
+      if (this.selWin === 'now' && this.arrival) { from = nowMin + this.arrival; to = from + 60; }
+      else if (['30', '60', '180'].includes(this.selWin)) { from = nowMin; to = nowMin + Number(this.selWin); }
+      else if (this.selWin === 'today') { from = nowMin; to = 24 * 60; }
+      else if (this.selWin === 'later') { const b = this.laterBands.find((x) => x.key === this.laterBand); if (b) { from = b.from; to = b.to; } }
+      const out = []; const seen = new Set();
+      for (const s of d.slots) { if (!this.bookable(s) || s.min < from || s.min > to) continue; const k = Math.floor(s.min / 30); if (seen.has(k)) continue; seen.add(k); out.push(s); if (out.length >= 6) break; }
+      return out;
+    },
+    get smsReceived() { return `【メンエスなう】PePe SPA 蒲田\n${this.dtLabel}・${this.therapistName ? this.therapistName + 'さん指名' : '指名なし'}・${this.courseLabel}\n予約リクエストを店舗へ送信しました。まだご予約は確定していません。店舗がご案内できる時刻をSMSでお知らせします。\n確実にご予約されたい場合は店舗へ直接お電話ください。\n070-4291-8367`; },
+    get smsPreview() { return `【メンエスなう】PePe SPA 蒲田\n${this.days[this.selDay].label} ${this.storePick}〜 ${this.therapistName ? this.therapistName + 'さん' : '指名なし'}・${this.courseLabel}\n店舗がご予約を確定しました。\nご変更・キャンセルは店舗へ直接お電話ください。\n070-4291-8367`; },
+    get smsConfirmed() { return this.storeReply ? `【メンエスなう】PePe SPA 蒲田\n${this.days[this.selDay].label} ${this.storeReply.time}〜 ${this.therapistName ? this.therapistName + 'さん' : '指名なし'}・${this.courseLabel}\n店舗がご予約を確定しました。\nご変更・キャンセルは店舗へ直接お電話ください。\n070-4291-8367` : ''; },
+    get smsRejected() { return `【メンエスなう】PePe SPA 蒲田\n${this.dtLabel}\n申し訳ございません。この時間帯はご案内できませんでした。\n別の時間帯をご希望の場合は、もう一度リクエストいただくか店舗へ直接お電話ください。\n070-4291-8367`; },
+    storeConfirm() { if (!this.storePick) return; this.storeReply = { kind: 'ok', time: this.storePick }; this.storeOpen = false; this.scrollTo('sec-done'); },
+    storeReject() { this.storeReply = { kind: 'ng' }; this.storeOpen = false; this.scrollTo('sec-done'); },
+
+    // --- セラピスト（店舗起点） ---
+    pickFree() { this.therapistPuid = ''; this.therapistName = ''; this.days = buildDays(null, false); this.selDay = this.earliest ? this.earliest.dayIndex : 0; this.answer('therapist'); },
+    pickTherapist(t) { this.therapistPuid = t.puid; this.therapistName = t.name; this.days = t.days; this.selDay = this.earliest ? this.earliest.dayIndex : (this.nextOpenDay() >= 0 ? this.nextOpenDay() : 0); this.answer('therapist'); },
+    switchTherapist(t) { this.pickTherapist(t); this.scenario = 'therapist'; },
+    editTherapist() { this.answered = this.answered.filter((k) => k !== 'therapist' && k !== 'datetime'); this.selSlot = null; this.revealed = this.revealed.filter((k) => k !== 'datetime'); this.scrollTo('sec-datetime'); },
+    goStore() { location.href = '?from=store'; },
+
+    // --- コース / オプション ---
+    pickCourse(c) { this.selCourse = c; this.answer('course'); },
+    get courseLabel() { return this.selCourse ? `${this.selCourse.group} ${this.selCourse.duration}分（¥${this.selCourse.price.toLocaleString()}${this.selCourse.from ? '〜' : ''}）` : ''; },
+    toggleOpt(id) { const i = this.selOpts.indexOf(id); i === -1 ? this.selOpts.push(id) : this.selOpts.splice(i, 1); },
+    get optTotal() { return options.filter((o) => this.selOpts.includes(o.id)).reduce((s, o) => s + o.price, 0); },
+    get optLabel() { return this.selOpts.length ? options.filter((o) => this.selOpts.includes(o.id)).map((o) => o.name).join(' / ') : 'オプションなし'; },
+    confirmOptions() { this.answer('options'); },
+    get totalLabel() { if (!this.selCourse) return '—'; const t = this.selCourse.price + this.optTotal + (this.therapistName ? 1000 : 0); return `¥${t.toLocaleString()}${this.selCourse.from ? '〜' : ''}`; },
+
+    // --- 進行 ---
+    async answer(key) {
+      if (!this.answered.includes(key)) this.answered.push(key);
+      await new Promise((r) => setTimeout(r, 350));
+      const order = ['therapist', 'datetime', 'course', 'options', 'contact'];
+      const next = order.find((k) => !this.answered.includes(k));
+      if (next && !this.revealed.includes(next)) this.revealed.push(next);
+      if (next) this.scrollTo('sec-' + next);
+    },
+    edit(key) {
+      this.answered = this.answered.filter((k) => k !== key);
+      if (key === 'datetime') { this.selSlot = null; this.selWin = ''; this.arrival = null; this.laterBand = ''; }
+      this.scrollTo('sec-' + key);
+    },
+    scrollTo(id) { this.$nextTick(() => { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); },
+
+    // --- 連絡先 / 送信 ---
+    get phoneDigits() { return this.phone.replace(/\D/g, ''); },
+    get phoneOk() { return this.phoneDigits.length >= 10 && this.phoneDigits.length <= 11; },
+    get nameOk() { return this.name.trim().length > 0; },
+    onPhoneInput() { this.phoneTouched = true; const d = this.phoneDigits.slice(0, 11); this.phone = d.length > 7 ? `${d.slice(0, 3)} ${d.slice(3, 7)} ${d.slice(7)}` : d.length > 3 ? `${d.slice(0, 3)} ${d.slice(3)}` : d; },
+    get phoneMasked() { const d = this.phoneDigits; return d.length >= 7 ? `${d.slice(0, 3)}-****-${d.slice(-4)}` : d; },
+    get ctaVisible() { return this.revealed.includes('contact') && !this.done; },
+    get canSubmit() { return this.phoneOk && this.nameOk && !this.submitting; },
+    get missingLabel() { const m = []; if (!this.phoneOk) m.push('電話番号'); if (!this.nameOk) m.push('お名前'); return m.length ? `あと ${m.join('・')}` : ''; },
+    async submit() {
+      if (!this.canSubmit) return;
+      this.submitting = true;
+      await new Promise((r) => setTimeout(r, 900));
+      this.submitting = false; this.done = true; this.confirmOpen = false;
+      this.$nextTick(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }));
+    },
+  };
+}
+</script>
+</body>
+</html>
