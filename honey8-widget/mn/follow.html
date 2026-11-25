@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>フォロー - メンエスなう</title>
+<!-- [DEMO] 本番ではこのページが men-esthe.co.jp 上で開く (別窓/オーバーレイ)。会員 Cookie はここで効く -->
+<style>
+  :root{--rose:#f53d7b;--rose-d:#d92a66;--ink:#111827;--sub:#6b7280;--bg:#fff;--el:#f6f7f9;--bdr:#e8eaef;--line:#06c755;--ok:#10b981}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;-webkit-font-smoothing:antialiased}
+  body{min-height:100vh;display:flex;flex-direction:column}
+  .top{display:flex;align-items:center;justify-content:center;padding:14px 16px 10px;border-bottom:1px solid var(--bdr)}
+  .top img{height:22px}
+  main{flex:1;padding:18px 20px 24px;max-width:420px;margin:0 auto;width:100%}
+  .who{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--bdr);border-radius:16px;background:var(--el)}
+  .who .av{width:56px;height:56px;border-radius:50%;object-fit:cover;object-position:center 20%;background:#ddd;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:20px}
+  .who .av.st{border-radius:14px;background:var(--rose)}
+  .who b{display:block;font-size:16px}
+  .who small{display:block;color:var(--sub);font-size:12px;margin-top:3px}
+  h1{font-size:18px;margin:18px 0 6px;letter-spacing:.01em}
+  p.lead{margin:0 0 16px;color:var(--sub);font-size:13px;line-height:1.6}
+  .btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:50px;border-radius:999px;border:1.5px solid var(--bdr);background:#fff;color:var(--ink);font:700 15px/1 inherit;font-family:inherit;cursor:pointer;margin-bottom:10px;-webkit-tap-highlight-color:transparent}
+  .btn:active{transform:scale(.985)}
+  .btn.line{background:var(--line);border-color:var(--line);color:#fff}
+  .btn.google{background:#fff}
+  .btn.rose{background:var(--rose);border-color:var(--rose);color:#fff}
+  .btn.ghost{border-color:transparent;color:var(--sub);font-weight:600;height:44px}
+  .btn svg,.btn img{width:20px;height:20px}
+  .or{display:flex;align-items:center;gap:10px;color:#9ca3af;font-size:11px;margin:8px 0 12px}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--bdr)}
+  .note{font-size:11px;color:#9ca3af;line-height:1.6;margin-top:14px}
+  /* done */
+  .done{display:none;text-align:center;padding-top:6px}
+  .check{width:72px;height:72px;border-radius:50%;background:var(--ok);margin:8px auto 14px;display:flex;align-items:center;justify-content:center;animation:pop .45s cubic-bezier(.2,.8,.2,1.2) both}
+  .check svg{width:36px;height:36px}
+  @keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+  .done h1{margin-top:4px}
+  .done .who{text-align:left;margin:16px 0}
+  .tgl{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--bdr);border-radius:14px;margin-bottom:12px;text-align:left}
+  .tgl b{font-size:13px;display:block}
+  .tgl small{display:block;color:var(--sub);font-size:11px;margin-top:2px}
+  .sw{width:44px;height:26px;border-radius:999px;background:#d1d5db;position:relative;flex-shrink:0;border:0;cursor:pointer}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+  .sw.on{background:var(--rose)}
+  .sw.on::after{left:21px}
+  .bar{height:3px;background:var(--bdr);border-radius:2px;overflow:hidden;margin:10px 0 6px}
+  .bar i{display:block;height:100%;width:100%;background:var(--rose);transform-origin:left;animation:shrink 4s linear forwards}
+  @keyframes shrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+  .cnt{font-size:11px;color:#9ca3af;margin-bottom:12px}
+  .demo{position:fixed;left:0;right:0;bottom:0;background:#111827;color:#cbd5e1;font-size:10.5px;line-height:1.5;padding:8px 14px calc(8px + env(safe-area-inset-bottom));text-align:center}
+  .demo b{color:#f9a6a6}
+  main{padding-bottom:86px}
+</style>
+</head>
+<body>
+<div class="top"><img src="../static/img/common/logo-light.svg" alt="メンエスなう"></div>
+<main>
+  <!-- 1. ログイン (初回のみ) -->
+  <section id="login">
+    <div class="who" id="who1"></div>
+    <h1 id="h-login">フォローして出勤をチェック</h1>
+    <p class="lead">メンエスなうの会員としてフォローすると、お店のHPを離れても出勤・投稿がまとめて見られます。1タップで始められます。</p>
+    <button class="btn line" data-login="line"><svg viewBox="0 0 24 24" fill="#fff"><path d="M24 10.3C24 5 18.6.6 12 .6S0 5 0 10.3c0 4.8 4.3 8.8 10 9.6.4.1.9.3 1.1.6.1.3.1.8 0 1.1l-.2 1c-.1.3-.2 1.2 1 .6 1.3-.5 6.9-4 9.4-7 1.8-1.9 2.7-3.8 2.7-5.9z"/></svg>LINEでログイン</button>
+    <button class="btn google" data-login="google"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5c-.3 1.5-1.1 2.8-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.7z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1C3.3 21.3 7.3 24 12 24z"/><path fill="#FBBC05" d="M5.3 14.3c-.5-1.5-.5-3.1 0-4.6V6.6H1.3c-1.7 3.4-1.7 7.4 0 10.8l4-3.1z"/><path fill="#EA4335" d="M12 4.7c1.7 0 3.3.6 4.5 1.8l3.4-3.4C17.9 1.2 15.1 0 12 0 7.3 0 3.3 2.7 1.3 6.6l4 3.1c.9-2.9 3.6-5 6.7-5z"/></svg>Googleでログイン</button>
+    <button class="btn" data-login="mail">メールで登録・ログイン</button>
+    <div class="or">または</div>
+    <button class="btn ghost" data-login="guest">ログインせずにこの端末だけでフォロー</button>
+    <p class="note">ログインなしのフォローはこのブラウザにだけ残ります。あとから会員になると引き継げます。</p>
+  </section>
+
+  <!-- 2. 完了 -->
+  <section class="done" id="done">
+    <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+    <h1 id="h-done"></h1>
+    <p class="lead" id="p-done"></p>
+    <div class="who" id="who2"></div>
+    <div class="tgl" id="tgl-row">
+      <div><b id="tgl-b">出勤したら通知する</b><small id="tgl-s">出勤開始時にプッシュ通知（WEBアプリ）</small></div>
+      <button class="sw on" id="sw" aria-label="通知"></button>
+    </div>
+    <a class="btn rose" id="go-list" href="following.html" target="_top">フォロー中一覧を見る</a>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="cnt" id="cnt">4秒後に自動で閉じます</div>
+    <button class="btn ghost" id="close">閉じてお店のHPに戻る</button>
+  </section>
+</main>
+<div class="demo"><b>DEMO</b> 本番ではこの画面が men-esthe.co.jp 上で別窓に開きます（店舗HPのドメインでは会員Cookieが届かないため）。LINE/Google ログインは実装済みの本番機能を使います。</div>
+<script>
+(function () {
+  // オーバーレイ側の起動確認 (届かないと「表示できませんでした」フォールバックに切り替わる)
+  try { parent.postMessage({ type: "mn-widget", event: "compose-ready" }, "*"); } catch (e) {}
+  var q = new URLSearchParams(location.search);
+  var rec = { kind: q.get("kind") || "therapist", id: q.get("id") || "", name: q.get("name") || "", img: q.get("img") || "",
+              extra: q.get("extra") || "", store: q.get("store") || "", area: q.get("area") || "", back: q.get("back") || "", at: Date.now(), notify: true };
+  var isStore = rec.kind === "store";
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function who() {
+    var av = rec.img && !isStore ? '<img class="av" src="' + esc(rec.img) + '" alt="">' : '<div class="av' + (isStore ? " st" : "") + '">' + esc((rec.name || "?").charAt(0)) + '</div>';
+    var sub = isStore ? esc(rec.area) + (rec.area ? " ・ " : "") + "店舗" : esc(rec.store) + (rec.extra ? " ・ " + esc(rec.extra) : "");
+    return av + '<div><b>' + esc(rec.name) + '</b><small>' + sub + '</small></div>';
+  }
+  document.getElementById("who1").innerHTML = who();
+  document.getElementById("who2").innerHTML = who();
+  if (isStore) {
+    document.getElementById("h-login").textContent = "お気に入り店舗に追加";
+    document.getElementById("tgl-b").textContent = "新着・イベントを通知する";
+    document.getElementById("tgl-s").textContent = "割引やイベント告知をプッシュ通知（WEBアプリ）";
+  }
+  var LOGIN = "mn-demo-login", FL = "mn-demo-follows";
+  function getLogin() { try { return localStorage.getItem(LOGIN) || ""; } catch (e) { return ""; } }
+  function save() {
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem(FL) || "[]"); } catch (e) {}
+    list = list.filter(function (x) { return !(x.kind === rec.kind && x.id === rec.id); });
+    list.unshift(rec);
+    try { localStorage.setItem(FL, JSON.stringify(list)); } catch (e) {}
+  }
+  var timer = null;
+  function finish() {
+    try { parent.postMessage({ type: "mn-follow", event: "done", kind: rec.kind, id: rec.id }, "*"); } catch (e) {}
+    try { if (window.opener) window.opener.postMessage({ type: "mn-follow", event: "done", kind: rec.kind, id: rec.id }, "*"); window.close(); } catch (e) {}
+  }
+  function showDone(how) {
+    save();
+    document.getElementById("login").style.display = "none";
+    var d = document.getElementById("done"); d.style.display = "block";
+    document.getElementById("h-done").textContent = isStore ? rec.name + " をお気に入りに追加しました" : rec.name + " さんをフォローしました";
+    document.getElementById("p-done").textContent = how === "guest"
+      ? "この端末に保存しました。会員登録するとスマホを変えても引き継げます。"
+      : (how === "line" ? "LINE" : how === "google" ? "Google" : "メール") + "アカウントでログインしました。フォロー中一覧はメンエスなうのマイページから見られます。";
+    var n = 4;
+    timer = setInterval(function () { n--; document.getElementById("cnt").textContent = n > 0 ? n + "秒後に自動で閉じます" : "閉じています…"; if (n <= 0) { clearInterval(timer); finish(); } }, 1000);
+  }
+  function stopAuto() { if (timer) { clearInterval(timer); timer = null; } document.getElementById("bar").style.animationPlayState = "paused"; document.getElementById("cnt").textContent = "「閉じてお店のHPに戻る」で戻れます"; }
+  document.querySelectorAll("[data-login]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var how = b.getAttribute("data-login");
+      if (how !== "guest") { try { localStorage.setItem(LOGIN, how); } catch (e) {} }
+      showDone(how);
+    });
+  });
+  document.getElementById("sw").addEventListener("click", function () {
+    this.classList.toggle("on"); rec.notify = this.classList.contains("on"); save(); stopAuto();
+  });
+  document.getElementById("go-list").addEventListener("click", stopAuto);
+  document.getElementById("close").addEventListener("click", function () { stopAuto(); finish(); });
+  // 2回目以降 (ログイン済み) はログイン画面を飛ばしてそのまま登録
+  var how = getLogin();
+  if (how) showDone(how);
+})();
+</script>
+</body>
+</html>
