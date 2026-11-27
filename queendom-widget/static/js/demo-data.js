@@ -86,6 +86,7 @@
         is_full: badge === "full", room_name: t.room || "",  // 多店舗(Finale)は店舗名をルーム名として出す
         catch_copy: badge === "now" ? t.catch || "" : "",
         link: t.link || null,  // [DEMO] 店舗HPのセラピスト詳細へ (build.py が付ける)
+        puid: t.puid,  // [DEMO] フォロー CTA 用
         guide_updated_at: fmt(ref - 12)
       });
     });
@@ -126,9 +127,23 @@
     };
   }
   function iso(d) { return d.toISOString(); }
+  // [DEMO] 店舗スコープのタイムライン: 本日出勤の先頭 8 人の最新投稿を 1 本ずつ集め、時刻をずらして新しい順に並べる
+  function timelineStore(offset, ref) {
+    if (offset > 0) return { store: storeObj(), items: [], has_more: false };
+    var items = [];
+    TS.filter(function (t) { return !!t.sched; }).slice(0, 8).forEach(function (t, i) {
+      var r = timeline(t.puid, 0, ref);
+      var it = r.items[i % 2 === 0 ? 0 : 1] || r.items[0];
+      if (!it) return;
+      var d = new Date(Date.now() - (20 + i * 47) * 60000);
+      it.created_at = iso(d);
+      items.push(it);
+    });
+    return { store: storeObj(), items: items, has_more: false, cta: storeCta() };
+  }
   function timeline(puid, offset, ref) {
     var t = findT(puid);
-    if (!t) return { store: storeObj(), items: [], has_more: false };
+    if (!t) return timelineStore(offset, ref);  // [DEMO] 店舗スコープ (data-therapist なし) は在籍の投稿を新しい順に束ねる
     if (offset > 0) return { store: storeObj(), items: [], has_more: false };
     var st = statusOf(t, ref);
     var today = st.s ? { start: fmt(st.s.start), end: fmt(st.s.end) } : null;
@@ -177,7 +192,7 @@
   ];
   function oshikome(puid, count) {
     var t = findT(puid);
-    if (!t) return { store: { name: STORE.name, logo: null, brand_logo_enabled: true }, therapist: null, total: 0, summary: null, items: [], has_more: false };
+    if (!t) return oshikomeStore(count);  // [DEMO] 店舗スコープ (data-therapist なし) は在籍全員の推しコメを束ねる
     var h = hash(t.puid);
     var total = 6 + (h % 9);
     var rot = h % COMMENTS.length;
@@ -208,6 +223,29 @@
         recommended_for: REC.map(function (x) { return { value: x[0], label: x[1] }; })
       },
       cta: ctaFor(t)
+    };
+  }
+  // [DEMO] 店舗スコープの推しコメ: 先頭 6 人から 1〜2 件ずつ集めて新しい順に並べる (本番 _oshikome_get の店舗単位と同じ形: item.therapist / therapist_puid)
+  function oshikomeStore(count) {
+    var items = [], total = 0;
+    TS.slice(0, 6).forEach(function (t, i) {
+      var h = hash(t.puid); total += 6 + (h % 9);
+      var rot = h % COMMENTS.length;
+      COMMENTS.slice(rot).concat(COMMENTS.slice(0, rot)).slice(0, i < 2 ? 2 : 1).forEach(function (x) {
+        items.push({ author: x.a, is_guest: x.g, date_label: x.d, comment: x.c.replace(/\{name\}/g, t.name).replace(/\{area\}/g, STORE.area), tags: x.tags, recommended_for: x.rec, therapist: t.name, therapist_puid: t.puid });
+      });
+    });
+    var lim = count === "all" ? items.length : (+count || 5);
+    return {
+      store: { name: STORE.name, logo: null, brand_logo_enabled: true },
+      therapist: null, total: total, summary: null,
+      items: items.slice(0, lim), has_more: lim < items.length,
+      form: {
+        turnstile_site_key: "", comment_min_length: 20, therapist_count: TS.length,
+        tag_groups: TAG_GROUPS.map(function (g) { return { label: g.label, tags: g.tags.map(function (x) { return { slug: x[0], label: x[1] }; }) }; }),
+        recommended_for: REC.map(function (x) { return { value: x[0], label: x[1] }; })
+      },
+      cta: storeCta()
     };
   }
   function roster() {

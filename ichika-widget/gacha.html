@@ -600,7 +600,7 @@ document.getElementById('autoWeb').onclick = () => auto('web'); document.getElem
     tg.textContent = on ? '🏪 お店側の管理画面を閉じる' : '🏪 お店側の管理画面「ガチャ 使用承認」を見る（デモ）';
   });
   if (!document.documentElement.classList.contains('embed')) return;
-  var post = function () { try { parent.postMessage({ type: 'mn-gacha', height: document.documentElement.scrollHeight }, '*'); } catch (e) {} };
+  var post = function () { try { var b = document.body, r = b.getBoundingClientRect(), mb = parseFloat(getComputedStyle(b).marginBottom) || 0; parent.postMessage({ type: 'mn-gacha', height: Math.ceil(r.bottom + mb) }, '*'); } catch (e) {} };
   if (window.ResizeObserver) new ResizeObserver(post).observe(document.body);
   setInterval(post, 800); post();
 })();

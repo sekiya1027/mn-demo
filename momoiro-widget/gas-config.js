@@ -2,7 +2,7 @@
  * セラピスト・出勤データの取得先（同じサーバー上の PHP。GAS 不要）
  * therapist-api.php が駅ちか（ranking-deli）店舗50740 から自動取得します。
  */
-var ICHIGOMILK_GAS_API_URL = "static/api.json?v=202611262339";  // [DEMO] therapist-api.php の取得結果を同梱
+var ICHIGOMILK_GAS_API_URL = "static/api.json?v=202611271614";  // [DEMO] therapist-api.php の取得結果を同梱
 
 /** 取得失敗時の表示用（メンエスじゃぱん画像URL・駅ちかリンク） */
 var ICHIGOMILK_STATIC_THERAPIST_DATA = {

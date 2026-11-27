@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>【デモ】来店特典ガチャ - アラウンドフォーティー</title>
+<title>【デモ】来店特典ガチャ - 所沢オーディション</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans JP', 'Hiragino Sans', sans-serif; background: #eef0f3; color: #111827; padding: 28px 24px 72px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
@@ -362,11 +362,11 @@
     <span class="turn">👉 次はこちら</span>
     <div class="col-label"><span class="ic">📱</span>お客のスマホ — 店舗公式HP（ウィジェット）</div>
     <div class="frame">
-      <div class="status s-status"><span>9:41</span><span>araundoforty.com</span></div>
-      <div class="s-nav"><span class="s-logo">アラウンドフォーティー</span><div class="s-nav-links"><span>TOP</span><span>THERAPIST</span><span>RESERVE</span></div></div>
+      <div class="status s-status"><span>9:41</span><span>tokorozawa-audition.com</span></div>
+      <div class="s-nav"><span class="s-logo">所沢オーディション</span><div class="s-nav-links"><span>TOP</span><span>THERAPIST</span><span>RESERVE</span></div></div>
       <div class="s-sec-head" style="padding-top:14px"><p class="en">GACHA</p><h3>来店特典ガチャ</h3></div>
       <div class="s-slot"><div class="gw" id="cw"></div></div>
-      <div class="s-foot">© アラウンドフォーティー</div>
+      <div class="s-foot">© 所沢オーディション</div>
     </div>
     <p class="col-note" id="cNote"></p>
   </div>
@@ -424,7 +424,7 @@ if (params.get('embed') === '1') document.documentElement.classList.add('embed')
 if (params.get('nomotion') === '1') document.documentElement.classList.add('nomotion');
 const reduced = () => document.documentElement.classList.contains('nomotion');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const STORE = 'アラウンドフォーティー 練馬';
+const STORE = '所沢オーディション';
 const fmt = d => `${d.getMonth() + 1}/${d.getDate()}(${'日月火水木金土'[d.getDay()]})`;
 const today = fmt(new Date()); const tomorrow = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return fmt(d); })();
 const exp = (() => { const d = new Date(); d.setDate(d.getDate() + 7); return fmt(d); })();
@@ -439,7 +439,7 @@ const CAPPOS = [[18, 26], [70, 14], [120, 30], [36, 74], [88, 62], [136, 78], [2
 const STEPS = [['番号を入れる', 'お客'], ['新規／既存を判定', 'メンエスなう'], ['長押しで回す', 'お客'], ['カプセルを開ける', 'お客'], ['WEB予約 or 電話', 'お客'], ['使用を承認', 'お店'], ['次回は既存ガチャ', 'お客']];
 
 /* 状態 */
-const S = { phase: 'gate', phone: '', kind: 'new', win: null, db: {}, route: '', slot: '', course: '90分', th: 'ゆうこ', search: '', toast: '', rows: [] };
+const S = { phase: 'gate', phone: '', kind: 'new', win: null, db: {}, route: '', slot: '', course: '90分', th: 'るり', search: '', toast: '', rows: [] };
 // db[phone] = { visits: n, pending: {r,nm,kind,route,slot}|null }
 const STEP_OF = { gate: 1, judge: 2, pendingShow: 5, machine: 3, charging: 3, drop: 4, tray: 4, open: 4, won: 5, book: 5, tel: 5, sent: 6, telwait: 6, approved: 7 };
 const TURN_S = ['sent', 'telwait'];
@@ -587,7 +587,7 @@ document.getElementById('autoWeb').onclick = () => auto('web'); document.getElem
   if (n === 3 || (vip && n < 4)) S.phase = 'machine';
   if (n === 4) { S.win = PRIZES[S.kind][2]; S.phase = 'tray'; }
   if (n >= 5) { S.win = PRIZES[S.kind][2]; S.db[S.phone].pending = { ...S.win, kind: S.kind, route: '' }; S.rows = [{ phone: S.phone, kind: S.kind, r: 3, nm: S.win.nm, status: 'won', route: '', date: today }]; S.phase = params.get('route') === 'book' ? 'book' : 'won'; if (S.phase === 'book') S.slot = ''; }
-  if (n >= 6) { S.rows[0].status = 'web'; S.slot = today + ' 19:00'; S.rows[0].route = `WEB予約 ${S.slot}・ゆうこ・90分`; S.phase = 'sent'; }
+  if (n >= 6) { S.rows[0].status = 'web'; S.slot = today + ' 19:00'; S.rows[0].route = `WEB予約 ${S.slot}・るり・90分`; S.phase = 'sent'; }
   if (n >= 7) { S.rows[0].status = 'used'; S.db[S.phone].visits = 1; S.db[S.phone].pending = null; S.phase = 'approved'; }
   render();
 })();
